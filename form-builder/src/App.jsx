@@ -1,69 +1,22 @@
-import React, {  useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Dashboard from './components/Dashboard';
 import AddForm from './components/AddForm';
 import FormBuilderView from './components/FormBuilderView';
 import { Share } from 'lucide-react';
 import { Button } from './ui';
+import { getForms, getFormById, createForm, updateForm } from './api';
 
 const FormBuilder = () => {
   const [currentView, setCurrentView] = useState('dashboard');
-  const [forms, setForms] = useState([
-    {
-      id: 1,
-      name: 'Contact Form',
-      description: 'Basic contact form with name, email, and message',
-      fields: [
-        { id: 1, type: 'text', label: 'Name', placeholder: 'Enter your name', required: true },
-        { id: 2, type: 'email', label: 'Email', placeholder: 'Enter your email', required: true },
-        { id: 3, type: 'textarea', label: 'Message', placeholder: 'Enter your message', required: false }
-      ],
-      createdAt: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Survey Form',
-      description: 'Customer satisfaction survey',
-      fields: [
-        { id: 1, type: 'text', label: 'Name', placeholder: 'Your name', required: true },
-        { id: 2, type: 'select', label: 'Rating', options: ['Excellent', 'Good', 'Average', 'Poor'], required: true }
-      ],
-      createdAt: '2024-01-20'
-    }
-  ]);
-
-  const [currentForm, setCurrentForm] = useState({
-    name: '',
-    description: '',
-    template: '',
-    fields: []
-  });
-
+  const [forms, setForms] = useState([]);
+  const [currentForm, setCurrentForm] = useState({ name: '', description: '', template: '', fields: [] });
   const [selectedField, setSelectedField] = useState(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [selectedFormForShare, setSelectedFormForShare] = useState(null);
   const [fieldConfig, setFieldConfig] = useState({
-    type: 'text',
-    label: '',
-    placeholder: '',
-    helperText: '',
-    required: false,
-    options: [],
-    validation: {
-      minLength: '',
-      maxLength: '',
-      pattern: ''
-    }
+    type: 'text', label: '', placeholder: '', helperText: '', required: false, options: [], validation: { minLength: '', maxLength: '', pattern: '' }
   });
-
-  const generateShareLink = (formId) => {
-    const shareId = `form-${formId}-${Date.now()}`;
-    return `${window.location.origin}/public/form/${shareId}`;
-  };
-  
-  const handleShare = (form) => {
-    setSelectedFormForShare(form);
-    setShareModalOpen(true);
-  };
+  const [editingFormId, setEditingFormId] = useState(null);
 
   const fieldTypes = [
     { type: 'text', label: 'Text Input', icon: '📝' },
@@ -77,23 +30,34 @@ const FormBuilder = () => {
     { type: 'file', label: 'File Upload', icon: '📎' }
   ];
 
-  const templates = [
-    { id: 'blank', name: 'Blank Form', description: 'Start with empty form' },
-    { id: 'contact', name: 'Contact Form', description: 'Pre-built contact form' },
-    { id: 'survey', name: 'Survey Form', description: 'Customer feedback survey' },
-    { id: 'registration', name: 'Registration Form', description: 'User registration form' }
-  ];
+  useEffect(() => {
+    loadForms();
+  }, []);
+
+  async function loadForms() {
+    try {
+      const data = await getForms();
+      setForms(data);
+    } catch (e) {
+      alert('Failed to load forms');
+    }
+  }
 
   const handleCreateForm = () => {
     setCurrentView('add-form');
     setCurrentForm({ name: '', description: '', template: '', fields: [] });
+    setEditingFormId(null);
   };
 
-  const handleNextToBuilder = () => {
+  const handleNextToBuilder = async () => {
     if (currentForm.template && currentForm.template !== 'blank') {
-      const templateForm = forms.find(f => f.name.toLowerCase().includes(currentForm.template));
-      if (templateForm) {
+      // Try to find a template from backend (if exists)
+      const templateMeta = forms.find(f => f.name.toLowerCase().includes(currentForm.template));
+      if (templateMeta) {
+        try {
+          const templateForm = await getFormById(templateMeta.id);
         setCurrentForm(prev => ({ ...prev, fields: [...templateForm.fields] }));
+        } catch {}
       }
     }
     setCurrentView('form-builder');
@@ -108,16 +72,9 @@ const FormBuilder = () => {
       helperText: '',
       required: false,
       options: type === 'select' || type === 'radio' ? ['Option 1', 'Option 2'] : [],
-      validation: {
-        minLength: '',
-        maxLength: '',
-        pattern: ''
-      }
+      validation: { minLength: '', maxLength: '', pattern: '' }
     };
-    setCurrentForm(prev => ({
-      ...prev,
-      fields: [...prev.fields, newField]
-    }));
+    setCurrentForm(prev => ({ ...prev, fields: [...prev.fields, newField] }));
   };
 
   const handleFieldSelect = (field) => {
@@ -128,45 +85,45 @@ const FormBuilder = () => {
   const handleFieldUpdate = () => {
     setCurrentForm(prev => ({
       ...prev,
-      fields: prev.fields.map(f => 
-        f.id === selectedField.id ? { ...fieldConfig } : f
-      )
+      fields: prev.fields.map(f => f.id === selectedField.id ? { ...fieldConfig } : f)
     }));
     setSelectedField(null);
-    setFieldConfig({
-      type: 'text',
-      label: '',
-      placeholder: '',
-      helperText: '',
-      required: false,
-      options: []
-    });
+    setFieldConfig({ type: 'text', label: '', placeholder: '', helperText: '', required: false, options: [] });
   };
 
-  const handleSaveForm = () => {
+  const handleSaveForm = async () => {
     const validationErrors = validateForm();
     if (validationErrors.length > 0) {
-      alert(`Please fix the following errors:\n${validationErrors.map(e => 
-        `${e.fieldLabel}: ${e.errors.join(', ')}`
-      ).join('\n')}`);
+      alert(`Please fix the following errors:\n${validationErrors.map(e => `${e.fieldLabel}: ${e.errors.join(', ')}`).join('\n')}`);
       return;
     }
-    const newForm = {
-      id: Date.now(),
-      ...currentForm,
-      shareId: `form-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setForms(prev => [...prev, newForm]);
-    setCurrentView('dashboard');
+    try {
+      if (editingFormId) {
+        await updateForm(editingFormId, currentForm);
+      } else {
+        await createForm(currentForm);
+      }
+      await loadForms();
+      setCurrentView('dashboard');
+    } catch (e) {
+      alert('Failed to save form');
+    }
+  };
+
+  const handleEditForm = async (id) => {
+    try {
+      const form = await getFormById(id);
+      setCurrentForm(form);
+      setEditingFormId(id);
+      setCurrentView('form-builder');
+    } catch {
+      alert('Form not found');
+    }
   };
 
   const renderFieldPreview = (field) => {
     validateForm();
-    const baseProps = {
-      placeholder: field.placeholder,
-      className: 'w-full'
-    };
+    const baseProps = { placeholder: field.placeholder, className: 'w-full' };
     switch (field.type) {
       case 'text':
       case 'email':
@@ -226,8 +183,7 @@ const FormBuilder = () => {
       if (field.validation.maxLength && field.validation.maxLength < 1) {
         errors.push('Maximum length must be at least 1');
       }
-      if (field.validation.minLength && field.validation.maxLength && 
-          parseInt(field.validation.minLength) > parseInt(field.validation.maxLength)) {
+      if (field.validation.minLength && field.validation.maxLength && parseInt(field.validation.minLength) > parseInt(field.validation.maxLength)) {
         errors.push('Minimum length cannot be greater than maximum length');
       }
     }
@@ -249,21 +205,17 @@ const FormBuilder = () => {
     currentForm.fields.forEach(field => {
       const fieldErrors = validateField(field);
       if (fieldErrors.length > 0) {
-        errors.push({
-          fieldId: field.id,
-          fieldLabel: field.label,
-          errors: fieldErrors
-        });
+        errors.push({ fieldId: field.id, fieldLabel: field.label, errors: fieldErrors });
       }
     });
     return errors;
   };
-
+  
   if (currentView === 'dashboard') {
-    return <Dashboard forms={forms} handleCreateForm={handleCreateForm} handleShare={handleShare} />;
+    return <Dashboard forms={forms} handleCreateForm={handleCreateForm} handleShare={() => {}} handleEditForm={handleEditForm} />;
   }
   if (currentView === 'add-form') {
-    return <AddForm currentForm={currentForm} setCurrentForm={setCurrentForm} templates={templates} setCurrentView={setCurrentView} handleNextToBuilder={handleNextToBuilder} />;
+    return <AddForm currentForm={currentForm} setCurrentForm={setCurrentForm} templates={forms} setCurrentView={setCurrentView} handleNextToBuilder={handleNextToBuilder} />;
   }
   if (currentView === 'form-builder') {
     return (

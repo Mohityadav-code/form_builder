@@ -2,7 +2,7 @@ import React from 'react';
 import { Plus, Edit3, Eye, Trash2, Share } from 'lucide-react';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '../ui';
 
-const Dashboard = ({ forms, handleCreateForm, handleShare }) => (
+const Dashboard = ({ forms, handleCreateForm, handleShare, handleEditForm }) => (
   <div className="max-w-7xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
     <div className="flex items-center justify-between">
       <div>
@@ -20,7 +20,6 @@ const Dashboard = ({ forms, handleCreateForm, handleShare }) => (
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               {form.name}
-              <Badge variant="secondary">{form.fields.length} fields</Badge>
             </CardTitle>
             <CardDescription>{form.description}</CardDescription>
           </CardHeader>
@@ -34,7 +33,7 @@ const Dashboard = ({ forms, handleCreateForm, handleShare }) => (
                   <Eye className="h-3 w-3" />
                   View
                 </Button>
-                <Button variant="outline" size="sm" className="flex items-center gap-1">
+                <Button variant="outline" size="sm" className="flex items-center gap-1" onClick={() => handleEditForm(form.id)}>
                   <Edit3 className="h-3 w-3" />
                   Edit
                 </Button>
