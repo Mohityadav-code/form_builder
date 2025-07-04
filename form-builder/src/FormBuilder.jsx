@@ -22,6 +22,7 @@ const FormBuilder = () => {
   const [userFormData, setUserFormData] = useState({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submissions, setSubmissions] = useState([]);
+  const [userFormErrors, setUserFormErrors] = useState({});
 
   const fieldTypes = [
     { type: 'text', label: 'Text Input', icon: '📝' },
@@ -276,10 +277,22 @@ const FormBuilder = () => {
   // Handler for user form submit
   const handleUserFormSubmit = async (e) => {
     e.preventDefault();
+    // Validate required fields
+    const errors = {};
+    if (viewingForm && viewingForm.fields) {
+      viewingForm.fields.forEach(field => {
+        if (field.required && (!userFormData[field.id] || userFormData[field.id].toString().trim() === '')) {
+          errors[field.id] = 'This field is required';
+        }
+      });
+    }
+    setUserFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
     try {
       await submitForm(id, userFormData);
       setSubmitSuccess(true);
       setUserFormData({});
+      setUserFormErrors({});
     } catch {
       alert('Failed to submit form');
     }
@@ -396,7 +409,7 @@ const FormBuilder = () => {
                   </label>
                   {field.type === 'text' && (
                     <input
-                      className="w-full border rounded px-2 py-1"
+                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
                       value={userFormData[field.id] || ''}
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       placeholder={field.placeholder}
@@ -405,14 +418,87 @@ const FormBuilder = () => {
                   )}
                   {field.type === 'textarea' && (
                     <textarea
-                      className="w-full border rounded px-2 py-1"
+                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
                       value={userFormData[field.id] || ''}
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       placeholder={field.placeholder}
                       required={field.required}
                     />
                   )}
-                  {/* Add other field types as needed */}
+                  {field.type === 'select' && (
+                    <select
+                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      value={userFormData[field.id] || ''}
+                      onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
+                      required={field.required}
+                    >
+                      <option value="">Select...</option>
+                      {field.options && field.options.map((option, idx) => (
+                        <option key={idx} value={option}>{option}</option>
+                      ))}
+                    </select>
+                  )}
+                  {field.type === 'checkbox' && (
+                    <input
+                      type="checkbox"
+                      className={`rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      checked={!!userFormData[field.id]}
+                      onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.checked }))}
+                      required={field.required}
+                    />
+                  )}
+                  {field.type === 'radio' && field.options && (
+                    <div className="space-y-2">
+                      {field.options.map((option, idx) => (
+                        <label key={idx} className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name={`radio-${field.id}`}
+                            value={option}
+                            checked={userFormData[field.id] === option}
+                            onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: option }))}
+                            required={field.required}
+                          />
+                          {option}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {field.type === 'email' && (
+                    <input
+                      type="email"
+                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      value={userFormData[field.id] || ''}
+                      onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                    />
+                  )}
+                  {field.type === 'number' && (
+                    <input
+                      type="number"
+                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      value={userFormData[field.id] || ''}
+                      onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      required={field.required}
+                    />
+                  )}
+                  {field.type === 'date' && (
+                    <input
+                      type="date"
+                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      value={userFormData[field.id] || ''}
+                      onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
+                      required={field.required}
+                    />
+                  )}
+                  {userFormErrors[field.id] && (
+                    <p className="text-red-500 text-sm">{userFormErrors[field.id]}</p>
+                  )}
+                  {field.helperText && (
+                    <p className="text-gray-600 text-sm">{field.helperText}</p>
+                  )}
                 </div>
               ))}
               <Button type="submit" className="w-full">Submit</Button>
