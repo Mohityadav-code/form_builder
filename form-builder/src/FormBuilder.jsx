@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import AddForm from './components/AddForm';
 import FormBuilderView from './components/FormBuilderView';
@@ -7,12 +8,12 @@ import { Button } from './ui';
 import { getForms, getFormById, createForm, updateForm, deleteForm } from './api';
 
 const FormBuilder = () => {
-  const [currentView, setCurrentView] = useState('dashboard');
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [forms, setForms] = useState([]);
   const [currentForm, setCurrentForm] = useState({ name: '', description: '', template: '', fields: [] });
   const [selectedField, setSelectedField] = useState(null);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [selectedFormForShare, setSelectedFormForShare] = useState(null);
   const [fieldConfig, setFieldConfig] = useState({
     type: 'text', label: '', placeholder: '', helperText: '', required: false, options: [], validation: { minLength: '', maxLength: '', pattern: '' }
   });
@@ -44,24 +45,62 @@ const FormBuilder = () => {
     }
   }
 
-  const handleCreateForm = () => {
-    setCurrentView('add-form');
-    setCurrentForm({ name: '', description: '', template: '', fields: [] });
-    setEditingFormId(null);
-  };
+  // Route-based logic
+  useEffect(() => {
+    if (location.pathname === '/' || location.pathname === '/dashboard') {
+      setViewingForm(null);
+      setEditingFormId(null);
+      setCurrentForm({ name: '', description: '', template: '', fields: [] });
+      return;
+    }
+    if (location.pathname === '/add') {
+      setCurrentForm({ name: '', description: '', template: '', fields: [] });
+      setEditingFormId(null);
+      setViewingForm(null);
+      return;
+    }
+    if (id) {
+      if (location.pathname.endsWith('/edit')) {
+        // Edit mode
+        getFormById(id).then(form => {
+          setCurrentForm(form);
+          setEditingFormId(id);
+          setViewingForm(null);
+        }).catch(() => navigate('/'));
+      } else if (location.pathname.endsWith('/view')) {
+        // View mode
+        getFormById(id).then(form => {
+          setViewingForm(form);
+          setEditingFormId(null);
+        }).catch(() => navigate('/'));
+      } else if (location.pathname.endsWith('/public/preview')) {
+        // Public preview mode
+        getFormById(id).then(form => {
+          setViewingForm(form);
+          setEditingFormId(null);
+        }).catch(() => navigate('/'));
+      }
+    }
+    // eslint-disable-next-line
+  }, [location.pathname, id]);
+
+  // Handlers
+  const handleCreateForm = () => navigate('/add');
+  const handleEditForm = (id) => navigate(`/form/${id}/edit`);
+  const handleViewForm = (id) => navigate(`/form/${id}/view`);
+  const handlePublicPreview = (id) => navigate(`/form/${id}/public/preview`);
 
   const handleNextToBuilder = async () => {
     if (currentForm.template && currentForm.template !== 'blank') {
-      // Try to find a template from backend (if exists)
       const templateMeta = forms.find(f => f.name.toLowerCase().includes(currentForm.template));
       if (templateMeta) {
         try {
           const templateForm = await getFormById(templateMeta.id);
-        setCurrentForm(prev => ({ ...prev, fields: [...templateForm.fields] }));
+          setCurrentForm(prev => ({ ...prev, fields: [...templateForm.fields] }));
         } catch {}
       }
     }
-    setCurrentView('form-builder');
+    navigate('/form/new/edit');
   };
 
   const handleAddField = (type) => {
@@ -99,44 +138,22 @@ const FormBuilder = () => {
       return;
     }
     try {
-      if (editingFormId) {
+      if (editingFormId && editingFormId !== 'new') {
         await updateForm(editingFormId, currentForm);
       } else {
         await createForm(currentForm);
       }
       await loadForms();
-      setCurrentView('dashboard');
+      navigate('/');
     } catch (e) {
       alert('Failed to save form');
     }
   };
 
-  const handleEditForm = async (id) => {
-    try {
-      const form = await getFormById(id);
-      setCurrentForm(form);
-      setEditingFormId(id);
-      setCurrentView('form-builder');
-    } catch {
-      alert('Form not found');
-    }
-  };
-
-  const handleViewForm = async (id) => {
-    try {
-      const form = await getFormById(id);
-      setViewingForm(form);
-      setCurrentView('view-form');
-    } catch {
-      alert('Form not found');
-    }
-  };
-
   const handleEditFromView = () => {
-    setCurrentForm(viewingForm);
-    setEditingFormId(viewingForm.id);
-    setViewingForm(null);
-    setCurrentView('form-builder');
+    if (viewingForm && viewingForm.id) {
+      navigate(`/form/${viewingForm.id}/edit`);
+    }
   };
 
   const handleDeleteForm = async (id) => {
@@ -145,6 +162,7 @@ const FormBuilder = () => {
       await deleteForm(id);
       await loadForms();
       alert('Form deleted');
+      navigate('/');
     } catch {
       alert('Failed to delete form');
     }
@@ -239,19 +257,20 @@ const FormBuilder = () => {
     });
     return errors;
   };
-  
-  if (currentView === 'dashboard') {
+
+  // Render logic based on route
+  if (location.pathname === '/' || location.pathname === '/dashboard') {
     return <Dashboard forms={forms} handleCreateForm={handleCreateForm} handleShare={() => {}} handleEditForm={handleEditForm} handleViewForm={handleViewForm} handleDeleteForm={handleDeleteForm} />;
   }
-  if (currentView === 'add-form') {
-    return <AddForm currentForm={currentForm} setCurrentForm={setCurrentForm} templates={forms} setCurrentView={setCurrentView} handleNextToBuilder={handleNextToBuilder} />;
+  if (location.pathname === '/add') {
+    return <AddForm currentForm={currentForm} setCurrentForm={setCurrentForm} templates={forms} setCurrentView={() => navigate('/')} handleNextToBuilder={handleNextToBuilder} />;
   }
-  if (currentView === 'form-builder') {
+  if (id && location.pathname.endsWith('/edit') && currentForm) {
     return (
       <FormBuilderView
         fieldTypes={fieldTypes}
         currentForm={currentForm}
-        setCurrentView={setCurrentView}
+        setCurrentView={() => navigate('/')}
         handleAddField={handleAddField}
         handleDragEnd={handleDragEnd}
         selectedField={selectedField}
@@ -266,7 +285,7 @@ const FormBuilder = () => {
       />
     );
   }
-  if (currentView === 'view-form' && viewingForm) {
+  if (id && location.pathname.endsWith('/view') && viewingForm) {
     return (
       <div className="h-screen flex bg-gray-50">
         <div className="flex-1 p-6 overflow-y-auto">
@@ -279,6 +298,39 @@ const FormBuilder = () => {
               <button className="ml-4 p-2 rounded hover:bg-gray-200" onClick={handleEditFromView} title="Edit">
                 <Edit3 className="h-6 w-6 text-blue-600" />
               </button>
+            </div>
+            <div className="space-y-4">
+              {viewingForm.fields && viewingForm.fields.length > 0 ? (
+                viewingForm.fields.map((field, idx) => (
+                  <div key={idx} className="mb-4">
+                    <label className="block font-medium mb-1">
+                      {field.label}
+                      {field.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+                    {/* Render field preview (read-only) */}
+                    {renderFieldPreview(field)}
+                    {field.helperText && (
+                      <p className="text-sm text-gray-600 mt-1">{field.helperText}</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-500">No fields in this form.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (id && location.pathname.endsWith('/public/preview') && viewingForm) {
+    return (
+      <div className="h-screen flex bg-gray-50">
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="text-center space-y-2">
+              <h1 className="text-2xl font-bold text-gray-900">{viewingForm.name}</h1>
+              <p className="text-gray-600">{viewingForm.description}</p>
             </div>
             <div className="space-y-4">
               {viewingForm.fields && viewingForm.fields.length > 0 ? (
