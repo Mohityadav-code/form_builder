@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Label, Textarea, Select, SelectItem } from '../ui';
+import { getFormById } from '../api';
 
 const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handleNextToBuilder }) => {
   // Find the selected template's name for display
@@ -11,6 +12,28 @@ const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handl
     const selected = templates.find(t => String(t.id) === String(currentForm.template));
     if (selected) selectedTemplateLabel = selected.name;
   }
+
+  useEffect(() => {
+    async function preloadTemplate() {
+      if (currentForm.template && currentForm.template !== 'blank') {
+        const selected = templates.find(t => String(t.id) === String(currentForm.template));
+        if (selected) {
+          try {
+            const details = await getFormById(selected.id);
+            setCurrentForm(prev => ({
+              ...prev,
+              description: details.description || '',
+              fields: details.fields || [],
+            }));
+          } catch {}
+        }
+      } else if (currentForm.template === 'blank') {
+        setCurrentForm(prev => ({ ...prev, description: '', fields: [] }));
+      }
+    }
+    preloadTemplate();
+    // eslint-disable-next-line
+  }, [currentForm.template]);
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -47,7 +70,7 @@ const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handl
           </div>
           <div className="space-y-2">
             <Label htmlFor="template">Template Selection</Label>
-            <Select value={selectedTemplateLabel} onValueChange={(value) => setCurrentForm(prev => ({ ...prev, template: value }))}>
+            <Select value={selectedTemplateLabel || ''} onValueChange={(value) => setCurrentForm(prev => ({ ...prev, template: value }))}>
               <SelectItem key="blank" value="blank">
                 <div>
                   <div className="font-medium">Blank Form</div>
@@ -63,7 +86,19 @@ const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handl
                 </SelectItem>
               ))}
             </Select>
+            <div className="mt-1 text-sm text-gray-700 font-medium">Selected: {selectedTemplateLabel}</div>
           </div>
+          {/* Show preloaded fields if any (for preview) */}
+          {currentForm.fields && currentForm.fields.length > 0 && (
+            <div className="bg-gray-100 rounded p-4 mt-4">
+              <div className="font-semibold mb-2">Preloaded Fields:</div>
+              <ul className="list-disc pl-5">
+                {currentForm.fields.map((f, idx) => (
+                  <li key={idx}>{f.label} ({f.type})</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setCurrentView('dashboard')}>
               Cancel
