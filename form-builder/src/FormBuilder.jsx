@@ -41,6 +41,7 @@ const FormBuilder = () => {
       const data = await getForms();
       setForms(data);
     } catch (e) {
+      console.error('Failed to load forms:', e);
       alert('Failed to load forms');
     }
   }
@@ -86,9 +87,8 @@ const FormBuilder = () => {
 
   // Handlers
   const handleCreateForm = () => navigate('/add');
-  const handleEditForm = (id) => navigate(`/form/${id}/edit`);
   const handleViewForm = (id) => navigate(`/form/${id}/view`);
-  const handlePublicPreview = (id) => navigate(`/form/${id}/public/preview`);
+
 
   const handleNextToBuilder = async () => {
     if (currentForm.template && currentForm.template !== 'blank') {
@@ -97,7 +97,11 @@ const FormBuilder = () => {
         try {
           const templateForm = await getFormById(templateMeta.id);
           setCurrentForm(prev => ({ ...prev, fields: [...templateForm.fields] }));
-        } catch {}
+        } catch {
+          alert('Failed to load template form');
+          console.error('Failed to load template form:', templateMeta.id);
+          return;
+        }
       }
     }
     navigate('/form/new/edit');
@@ -146,6 +150,7 @@ const FormBuilder = () => {
       await loadForms();
       navigate('/');
     } catch (e) {
+      console.error('Failed to save form:', e);
       alert('Failed to save form');
     }
   };
@@ -260,7 +265,7 @@ const FormBuilder = () => {
 
   // Render logic based on route
   if (location.pathname === '/' || location.pathname === '/dashboard') {
-    return <Dashboard forms={forms} handleCreateForm={handleCreateForm} handleShare={() => {}} handleEditForm={handleEditForm} handleViewForm={handleViewForm} handleDeleteForm={handleDeleteForm} />;
+    return <Dashboard forms={forms} handleCreateForm={handleCreateForm}  handleViewForm={handleViewForm} handleDeleteForm={handleDeleteForm} />;
   }
   if (location.pathname === '/add') {
     return <AddForm currentForm={currentForm} setCurrentForm={setCurrentForm} templates={forms} setCurrentView={() => navigate('/')} handleNextToBuilder={handleNextToBuilder} />;

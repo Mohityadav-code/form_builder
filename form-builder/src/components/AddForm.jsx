@@ -25,7 +25,10 @@ const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handl
               description: details.description || '',
               fields: details.fields || [],
             }));
-          } catch {}
+          } catch {
+            console.error('Failed to preload template:', selected.id);
+            setCurrentForm(prev => ({ ...prev, description: '', fields: [] }));
+          }
         }
       } else if (currentForm.template === 'blank') {
         setCurrentForm(prev => ({ ...prev, description: '', fields: [] }));
