@@ -33,4 +33,11 @@ router.put('/forms/:id', (req, res) => {
   res.json(updated);
 });
 
+// Delete a form by id
+router.delete('/forms/:id', (req, res) => {
+  const idx = require('../database').deleteFormById(req.params.id);
+  if (!idx) return res.status(404).json({ error: 'Form not found' });
+  res.json({ success: true });
+});
+
 module.exports = router;

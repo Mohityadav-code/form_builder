@@ -30,4 +30,12 @@ export async function updateForm(id, form) {
   });
   if (!res.ok) throw new Error('Failed to update form');
   return res.json();
+}
+
+export async function deleteForm(id) {
+  const res = await fetch(`${API_URL}/forms/${id}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error('Failed to delete form');
+  return res.json();
 } 

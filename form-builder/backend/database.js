@@ -45,9 +45,19 @@ function updateFormById(id, updated) {
   return null;
 }
 
+function deleteFormById(id) {
+  const idx = forms.findIndex(f => f.id == id);
+  if (idx !== -1) {
+    forms.splice(idx, 1);
+    return true;
+  }
+  return false;
+}
+
 module.exports = {
   getForms,
   getFormById,
   addForm,
-  updateFormById
+  updateFormById,
+  deleteFormById
 };
