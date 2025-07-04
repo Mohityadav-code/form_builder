@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit3, Eye, Trash2, ArrowLeft, GripVertical } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+
 
 // Custom Components
 const Card = ({ children, className = "", onClick }) => (
@@ -122,7 +124,7 @@ const Select = ({ children, value, onValueChange }) => {
   );
 };
 
-const SelectItem = ({ children, value, onClick }) => (
+const SelectItem = ({ children, onClick }) => (
   <div
     className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100"
     onClick={onClick}
@@ -331,6 +333,16 @@ const FormBuilder = () => {
     }
   };
 
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+    
+    const items = Array.from(currentForm.fields);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    setCurrentForm(prev => ({ ...prev, fields: items }));
+  };
+
   if (currentView === 'dashboard') {
     return (
       <div className="max-w-7xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -487,7 +499,19 @@ const FormBuilder = () => {
             </div>
 
             <div className="space-y-4">
-              {currentForm.fields.map((field) => (
+            <DragDropContext onDragEnd={handleDragEnd}>
+  <Droppable droppableId="form-fields">
+    {(provided) => (
+      <div {...provided.droppableProps} ref={provided.innerRef}>
+        {currentForm.fields.map((field, index) => (
+          <Draggable key={field.id} draggableId={field.id.toString()} index={index}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+                className={`mb-4 ${snapshot.isDragging ? 'opacity-50' : ''}`}
+              >
                 <Card 
                   key={field.id} 
                   className={`cursor-pointer transition-all ${selectedField?.id === field.id ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'}`}
@@ -507,7 +531,15 @@ const FormBuilder = () => {
                     )}
                   </CardContent>
                 </Card>
-              ))}
+                </div>
+            )}
+          </Draggable>
+        ))}
+        {provided.placeholder}
+      </div>
+    )}
+  </Droppable>
+</DragDropContext>
               
               {currentForm.fields.length === 0 && (
                 <Card className="border-dashed border-2 border-gray-300 bg-gray-50">
