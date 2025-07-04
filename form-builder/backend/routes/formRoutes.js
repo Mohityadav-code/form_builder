@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getForms, getFormById, addForm, updateFormById } = require('../database');
+const { getForms, getFormById, addForm, updateFormById, deleteFormById, addSubmission, getSubmissions } = require('../database');
 const Form = require('../models/form');
 
 // Get all forms (metadata only)
@@ -38,6 +38,22 @@ router.delete('/forms/:id', (req, res) => {
   const idx = require('../database').deleteFormById(req.params.id);
   if (!idx) return res.status(404).json({ error: 'Form not found' });
   res.json({ success: true });
+});
+
+// Submit a filled form
+router.post('/forms/:id/submit', (req, res) => {
+  const form = getFormById(req.params.id);
+  if (!form) return res.status(404).json({ error: 'Form not found' });
+  addSubmission(req.params.id, req.body);
+  res.status(201).json({ success: true });
+});
+
+// Get all submissions for a form
+router.get('/forms/:id/submissions', (req, res) => {
+  const form = getFormById(req.params.id);
+  if (!form) return res.status(404).json({ error: 'Form not found' });
+  const submissions = getSubmissions(req.params.id);
+  res.json(submissions);
 });
 
 module.exports = router;
