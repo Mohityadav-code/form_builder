@@ -1,17 +1,164 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
-import { Button } from './components/ui/button';
-import { Input } from './components/ui/input';
-import { Label } from './components/ui/label';
-import { Textarea } from './components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
-import { Switch } from './components/ui/switch';
-import { Separator } from './components/ui/separator';
-import { Badge } from './components/ui/badge';
 import { Plus, Edit3, Eye, Trash2, ArrowLeft, GripVertical } from 'lucide-react';
 
+// Custom Components
+const Card = ({ children, className = "", onClick }) => (
+  <div className={`bg-white rounded-lg border shadow-sm ${className}`} onClick={onClick}>
+    {children}
+  </div>
+);
+
+const CardHeader = ({ children }) => (
+  <div className="p-6 pb-4">
+    {children}
+  </div>
+);
+
+const CardTitle = ({ children, className = "" }) => (
+  <h3 className={`text-lg font-semibold leading-none tracking-tight ${className}`}>
+    {children}
+  </h3>
+);
+
+const CardDescription = ({ children }) => (
+  <p className="text-sm text-gray-600 mt-2">
+    {children}
+  </p>
+);
+
+const CardContent = ({ children, className = "" }) => (
+  <div className={`p-6 pt-0 ${className}`}>
+    {children}
+  </div>
+);
+
+const Button = ({ children, variant = "default", size = "default", className = "", onClick, disabled = false }) => {
+  const baseClasses = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none";
+  
+  const variants = {
+    default: "bg-blue-600 text-white hover:bg-blue-700",
+    outline: "border border-gray-300 bg-white hover:bg-gray-50",
+    secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200"
+  };
+  
+  const sizes = {
+    default: "h-10 px-4 py-2",
+    sm: "h-9 px-3 text-sm",
+    lg: "h-11 px-8"
+  };
+  
+  return (
+    <button
+      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      {children}
+    </button>
+  );
+};
+
+const Input = ({ type = "text", placeholder = "", value = "", onChange, className = "", id }) => (
+  <input
+    type={type}
+    placeholder={placeholder}
+    value={value}
+    onChange={onChange}
+    id={id}
+    className={`flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+  />
+);
+
+const Label = ({ children, htmlFor, className = "" }) => (
+  <label
+    htmlFor={htmlFor}
+    className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${className}`}
+  >
+    {children}
+  </label>
+);
+
+const Textarea = ({ placeholder = "", value = "", onChange, rows = 3, className = "", id }) => (
+  <textarea
+    placeholder={placeholder}
+    value={value}
+    onChange={onChange}
+    rows={rows}
+    id={id}
+    className={`flex min-h-[80px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+  />
+);
+
+const Select = ({ children, value, onValueChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="relative">
+      <button
+        className="flex h-10 w-full items-center justify-between rounded-md border border-gray-300 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{value || "Select..."}</span>
+        <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      
+      {isOpen && (
+        <div className="absolute top-full z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg">
+          <div className="max-h-60 overflow-auto p-1">
+            {React.Children.map(children, (child) => 
+              React.cloneElement(child, { 
+                onClick: () => {
+                  onValueChange(child.props.value);
+                  setIsOpen(false);
+                }
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const SelectItem = ({ children, value, onClick }) => (
+  <div
+    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-gray-100 focus:bg-gray-100"
+    onClick={onClick}
+  >
+    {children}
+  </div>
+);
+
+const Switch = ({ checked, onCheckedChange }) => (
+  <button
+    className={`inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 ${checked ? 'bg-blue-600' : 'bg-gray-200'}`}
+    onClick={() => onCheckedChange(!checked)}
+  >
+    <span className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+  </button>
+);
+
+const Separator = () => (
+  <div className="w-full h-px bg-gray-200" />
+);
+
+const Badge = ({ children, variant = "default" }) => {
+  const variants = {
+    default: "bg-blue-100 text-blue-800",
+    secondary: "bg-gray-100 text-gray-800"
+  };
+  
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${variants[variant]}`}>
+      {children}
+    </span>
+  );
+};
+
 const FormBuilder = () => {
-  const [currentView, setCurrentView] = useState('dashboard'); // dashboard, add-form, form-builder
+  const [currentView, setCurrentView] = useState('dashboard');
   const [forms, setForms] = useState([
     {
       id: 1,
@@ -151,21 +298,16 @@ const FormBuilder = () => {
         return <Textarea {...baseProps} rows={3} />;
       case 'select':
         return (
-          <Select>
-            <SelectTrigger>
-              <SelectValue placeholder={field.placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-              {field.options?.map((option, idx) => (
-                <SelectItem key={idx} value={option}>{option}</SelectItem>
-              ))}
-            </SelectContent>
+          <Select value="" onValueChange={() => {}}>
+            {field.options?.map((option, idx) => (
+              <SelectItem key={idx} value={option}>{option}</SelectItem>
+            ))}
           </Select>
         );
       case 'checkbox':
         return (
           <div className="flex items-center space-x-2">
-            <input type="checkbox" id={field.id} />
+            <input type="checkbox" id={field.id} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
             <Label htmlFor={field.id}>{field.label}</Label>
           </div>
         );
@@ -174,7 +316,7 @@ const FormBuilder = () => {
           <div className="space-y-2">
             {field.options?.map((option, idx) => (
               <div key={idx} className="flex items-center space-x-2">
-                <input type="radio" id={`${field.id}-${idx}`} name={field.id} />
+                <input type="radio" id={`${field.id}-${idx}`} name={field.id} className="text-blue-600 focus:ring-blue-500" />
                 <Label htmlFor={`${field.id}-${idx}`}>{option}</Label>
               </div>
             ))}
@@ -191,13 +333,13 @@ const FormBuilder = () => {
 
   if (currentView === 'dashboard') {
     return (
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <div className="max-w-7xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Form Builder</h1>
-            <p className="text-muted-foreground">Create and manage your forms</p>
+            <h1 className="text-3xl font-bold text-gray-900">Form Builder</h1>
+            <p className="text-gray-600">Create and manage your forms</p>
           </div>
-          <Button onClick={handleCreateForm} className="gap-2">
+          <Button onClick={handleCreateForm} className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             Add New Form
           </Button>
@@ -215,19 +357,19 @@ const FormBuilder = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-600">
                     Created: {new Date(form.createdAt).toLocaleDateString()}
                   </p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-1">
+                    <Button variant="outline" size="sm" className="flex items-center gap-1">
                       <Eye className="h-3 w-3" />
                       View
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1">
+                    <Button variant="outline" size="sm" className="flex items-center gap-1">
                       <Edit3 className="h-3 w-3" />
                       Edit
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1 text-red-600 hover:text-red-700">
+                    <Button variant="outline" size="sm" className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50">
                       <Trash2 className="h-3 w-3" />
                       Delete
                     </Button>
@@ -243,13 +385,13 @@ const FormBuilder = () => {
 
   if (currentView === 'add-form') {
     return (
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => setCurrentView('dashboard')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-3xl font-bold">Create New Form</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Create New Form</h1>
         </div>
 
         <Card>
@@ -281,19 +423,14 @@ const FormBuilder = () => {
             <div className="space-y-2">
               <Label htmlFor="template">Template Selection</Label>
               <Select value={currentForm.template} onValueChange={(value) => setCurrentForm(prev => ({ ...prev, template: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      <div>
-                        <div className="font-medium">{template.name}</div>
-                        <div className="text-sm text-muted-foreground">{template.description}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
+                {templates.map((template) => (
+                  <SelectItem key={template.id} value={template.id}>
+                    <div>
+                      <div className="font-medium">{template.name}</div>
+                      <div className="text-sm text-gray-600">{template.description}</div>
+                    </div>
+                  </SelectItem>
+                ))}
               </Select>
             </div>
 
@@ -316,9 +453,9 @@ const FormBuilder = () => {
 
   if (currentView === 'form-builder') {
     return (
-      <div className="h-screen flex">
+      <div className="h-screen flex bg-gray-50">
         {/* Left Sidebar - Field Types */}
-        <div className="w-80 border-r bg-gray-50 p-4 space-y-4">
+        <div className="w-80 border-r bg-white p-4 space-y-4 overflow-y-auto">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => setCurrentView('add-form')}>
               <ArrowLeft className="h-4 w-4" />
@@ -331,7 +468,7 @@ const FormBuilder = () => {
               <Button
                 key={fieldType.type}
                 variant="outline"
-                className="w-full justify-start gap-2 h-auto p-3"
+                className="w-full justify-start gap-2 h-auto p-3 hover:bg-blue-50 hover:border-blue-300"
                 onClick={() => handleAddField(fieldType.type)}
               >
                 <span className="text-lg">{fieldType.icon}</span>
@@ -345,15 +482,15 @@ const FormBuilder = () => {
         <div className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-2xl mx-auto space-y-6">
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold">{currentForm.name}</h1>
-              <p className="text-muted-foreground">{currentForm.description}</p>
+              <h1 className="text-2xl font-bold text-gray-900">{currentForm.name}</h1>
+              <p className="text-gray-600">{currentForm.description}</p>
             </div>
 
             <div className="space-y-4">
               {currentForm.fields.map((field) => (
                 <Card 
                   key={field.id} 
-                  className={`cursor-pointer transition-all ${selectedField?.id === field.id ? 'ring-2 ring-blue-500' : 'hover:shadow-md'}`}
+                  className={`cursor-pointer transition-all ${selectedField?.id === field.id ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'}`}
                   onClick={() => handleFieldSelect(field)}
                 >
                   <CardContent className="p-4">
@@ -366,16 +503,16 @@ const FormBuilder = () => {
                     </div>
                     {renderFieldPreview(field)}
                     {field.helperText && (
-                      <p className="text-sm text-muted-foreground mt-1">{field.helperText}</p>
+                      <p className="text-sm text-gray-600 mt-1">{field.helperText}</p>
                     )}
                   </CardContent>
                 </Card>
               ))}
               
               {currentForm.fields.length === 0 && (
-                <Card className="border-dashed border-2 border-gray-300">
+                <Card className="border-dashed border-2 border-gray-300 bg-gray-50">
                   <CardContent className="p-8 text-center">
-                    <p className="text-muted-foreground">No fields added yet. Click on field types to add them.</p>
+                    <p className="text-gray-600">No fields added yet. Click on field types to add them.</p>
                   </CardContent>
                 </Card>
               )}
@@ -393,7 +530,7 @@ const FormBuilder = () => {
         </div>
 
         {/* Right Sidebar - Field Configuration */}
-        <div className="w-80 border-l bg-gray-50 p-4 space-y-4">
+        <div className="w-80 border-l bg-white p-4 space-y-4 overflow-y-auto">
           <h2 className="text-lg font-semibold">Field Configuration</h2>
           
           {selectedField ? (
@@ -401,16 +538,11 @@ const FormBuilder = () => {
               <div className="space-y-2">
                 <Label>Field Type</Label>
                 <Select value={fieldConfig.type} onValueChange={(value) => setFieldConfig(prev => ({ ...prev, type: value }))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fieldTypes.map((type) => (
-                      <SelectItem key={type.type} value={type.type}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  {fieldTypes.map((type) => (
+                    <SelectItem key={type.type} value={type.type}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
                 </Select>
               </div>
 
@@ -468,6 +600,7 @@ const FormBuilder = () => {
                             const newOptions = fieldConfig.options.filter((_, i) => i !== idx);
                             setFieldConfig(prev => ({ ...prev, options: newOptions }));
                           }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           Remove
                         </Button>
@@ -504,14 +637,14 @@ const FormBuilder = () => {
                     }));
                     setSelectedField(null);
                   }}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   Delete
                 </Button>
               </div>
             </div>
           ) : (
-            <div className="text-center text-muted-foreground">
+            <div className="text-center text-gray-600 py-8">
               <p>Select a field to configure its properties</p>
             </div>
           )}
