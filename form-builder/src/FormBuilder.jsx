@@ -102,26 +102,24 @@ const FormBuilder = () => {
 
 
   const handleNextToBuilder = async () => {
+    let draftForm = { ...currentForm };
     if (currentForm.template && currentForm.template !== 'blank') {
-      try {
-        const templateMeta = forms.find(f => f.name.toLowerCase().includes(currentForm.template));
-        if (templateMeta) {
-          try {
-            const templateForm = await getFormById(templateMeta.id);
-            setCurrentForm(prev => ({ ...prev, fields: [...templateForm.fields] }));
-          } catch {
-            alert('Failed to load template form');
-            console.error('Failed to load template form:', templateMeta.id);
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load template:', error);
-        alert('Failed to load template');
-        return;
+      const templateMeta = forms.find(f => f.name.toLowerCase().includes(currentForm.template));
+      if (templateMeta) {
+        try {
+          const templateForm = await getFormById(templateMeta.id);
+          draftForm.fields = [...templateForm.fields];
+        } catch {}
       }
     }
-    navigate('/form/new/edit');
+    // Create draft form in backend
+    try {
+      const created = await createForm(draftForm);
+      await loadForms();
+      navigate(`/form/${created.id}/edit`);
+    } catch {
+      alert('Failed to create form');
+    }
   };
 
   const handleAddField = (type) => {
