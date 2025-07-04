@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Edit3, Eye, Trash2, ArrowLeft, GripVertical } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Plus, Edit3, Eye, Trash2, ArrowLeft, GripVertical ,Share} from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 
@@ -21,6 +21,8 @@ const CardTitle = ({ children, className = "" }) => (
     {children}
   </h3>
 );
+
+
 
 const CardDescription = ({ children }) => (
   <p className="text-sm text-gray-600 mt-2">
@@ -192,16 +194,34 @@ const FormBuilder = () => {
     fields: []
   });
 
+
   const [selectedField, setSelectedField] = useState(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedFormForShare, setSelectedFormForShare] = useState(null);
   const [fieldConfig, setFieldConfig] = useState({
     type: 'text',
     label: '',
     placeholder: '',
     helperText: '',
     required: false,
-    options: []
+    options: [],
+    validation: {
+      minLength: '',
+      maxLength: '',
+      pattern: ''
+    }
   });
 
+  const generateShareLink = (formId) => {
+    const shareId = `form-${formId}-${Date.now()}`;
+    return `${window.location.origin}/public/form/${shareId}`;
+  };
+  
+  const handleShare = (form) => {
+    setSelectedFormForShare(form);
+    setShareModalOpen(true);
+  };
+  
   const fieldTypes = [
     { type: 'text', label: 'Text Input', icon: '📝' },
     { type: 'email', label: 'Email', icon: '📧' },
@@ -244,7 +264,12 @@ const FormBuilder = () => {
       placeholder: `Enter ${type}`,
       helperText: '',
       required: false,
-      options: type === 'select' || type === 'radio' ? ['Option 1', 'Option 2'] : []
+      options: type === 'select' || type === 'radio' ? ['Option 1', 'Option 2'] : [],
+      validation: {
+        minLength: '',
+        maxLength: '',
+        pattern: ''
+      }
     };
     setCurrentForm(prev => ({
       ...prev,
@@ -276,16 +301,28 @@ const FormBuilder = () => {
   };
 
   const handleSaveForm = () => {
+    const validationErrors = validateForm();
+    
+    if (validationErrors.length > 0) {
+      alert(`Please fix the following errors:\n${validationErrors.map(e => 
+        `${e.fieldLabel}: ${e.errors.join(', ')}`
+      ).join('\n')}`);
+      return;
+    }
+    
     const newForm = {
       id: Date.now(),
       ...currentForm,
+      shareId: `form-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString().split('T')[0]
     };
+    
     setForms(prev => [...prev, newForm]);
     setCurrentView('dashboard');
   };
 
   const renderFieldPreview = (field) => {
+    validateForm()
     const baseProps = {
       placeholder: field.placeholder,
       className: "w-full"
@@ -342,7 +379,157 @@ const FormBuilder = () => {
     
     setCurrentForm(prev => ({ ...prev, fields: items }));
   };
+  const validateField = (field) => {
+    const errors = [];
+    
+    // Text/Email/Textarea validation
+    if (['text', 'email', 'textarea'].includes(field.type)) {
+      if (field.validation.minLength && field.validation.minLength < 1) {
+        errors.push('Minimum length must be at least 1');
+      }
+      if (field.validation.maxLength && field.validation.maxLength < 1) {
+        errors.push('Maximum length must be at least 1');
+      }
+      if (field.validation.minLength && field.validation.maxLength && 
+          parseInt(field.validation.minLength) > parseInt(field.validation.maxLength)) {
+        errors.push('Minimum length cannot be greater than maximum length');
+      }
+    }
+    
+    // Select/Radio validation
+    if (['select', 'radio'].includes(field.type)) {
+      if (!field.options || field.options.length < 2) {
+        errors.push('Must have at least 2 options');
+      }
+    }
+    
+    // Checkbox validation
+    if (field.type === 'checkbox') {
+      if (!field.options || field.options.length < 1) {
+        errors.push('Must have at least 1 option');
+      }
+    }
+    
+    return errors;
+  };
 
+  const validateForm = () => {
+    const errors = [];
+    
+    currentForm.fields.forEach(field => {
+      const fieldErrors = validateField(field);
+      if (fieldErrors.length > 0) {
+        errors.push({
+          fieldId: field.id,
+          fieldLabel: field.label,
+          errors: fieldErrors
+        });
+      }
+    });
+    
+    return errors;
+  };
+
+  const PublicFormViewer = ({ formId }) => {
+    const [form, setForm] = useState(null);
+    const [formData, setFormData] = useState({});
+    const [errors, setErrors] = useState({});
+    const [submitted, setSubmitted] = useState(false);
+    
+    // Load form data
+    useEffect(() => {
+      // In real app, fetch from API
+      const foundForm = forms.find(f => f.id.toString() === formId);
+      setForm(foundForm);
+    }, [formId]);
+    
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      const newErrors = {};
+      
+      // Validate form data
+      form.fields.forEach(field => {
+        if (field.required && !formData[field.id]) {
+          newErrors[field.id] = 'This field is required';
+        }
+        
+        // Text validation
+        if (field.type === 'text' && formData[field.id]) {
+          const value = formData[field.id];
+          if (field.validation.minLength && value.length < field.validation.minLength) {
+            newErrors[field.id] = `Minimum length is ${field.validation.minLength}`;
+          }
+          if (field.validation.maxLength && value.length > field.validation.maxLength) {
+            newErrors[field.id] = `Maximum length is ${field.validation.maxLength}`;
+          }
+        }
+      });
+      
+      if (Object.keys(newErrors).length === 0) {
+        // Submit form
+        console.log('Form submitted:', formData);
+        setSubmitted(true);
+      } else {
+        setErrors(newErrors);
+      }
+    };
+    
+    if (submitted) {
+      return (
+        <div className="max-w-2xl mx-auto p-6 text-center">
+          <h2 className="text-2xl font-bold text-green-600 mb-4">Thank you!</h2>
+          <p>Your form has been submitted successfully.</p>
+        </div>
+      );
+    }
+    
+    if (!form) {
+      return <div className="text-center p-6">Form not found</div>;
+    }
+    
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-2">{form.name}</h1>
+        <p className="text-gray-600 mb-6">{form.description}</p>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {form.fields.map(field => (
+            <div key={field.id} className="space-y-2">
+              <Label>
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              
+              {/* Render field based on type */}
+              {field.type === 'text' && (
+                <Input
+                  value={formData[field.id] || ''}
+                  onChange={(e) => setFormData(prev => ({...prev, [field.id]: e.target.value}))}
+                  placeholder={field.placeholder}
+                  className={errors[field.id] ? 'border-red-500' : ''}
+                />
+              )}
+              
+              {/* Add other field types here */}
+              
+              {errors[field.id] && (
+                <p className="text-red-500 text-sm">{errors[field.id]}</p>
+              )}
+              
+              {field.helperText && (
+                <p className="text-gray-600 text-sm">{field.helperText}</p>
+              )}
+            </div>
+          ))}
+          
+          <Button type="submit" className="w-full">
+            Submit Form
+          </Button>
+        </form>
+      </div>
+    );
+  };
+  
   if (currentView === 'dashboard') {
     return (
       <div className="max-w-7xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -385,6 +572,15 @@ const FormBuilder = () => {
                       <Trash2 className="h-3 w-3" />
                       Delete
                     </Button>
+                    <Button 
+  variant="outline" 
+  size="sm" 
+  className="flex items-center gap-1"
+  onClick={() => handleShare(form)}
+>
+  <Share className="h-3 w-3" />
+  Share
+</Button>
                   </div>
                 </div>
               </CardContent>
@@ -602,6 +798,44 @@ const FormBuilder = () => {
                   rows={2}
                 />
               </div>
+              {(['text', 'email', 'textarea'].includes(fieldConfig.type)) && (
+  <>
+    <div className="space-y-2">
+      <Label>Minimum Length</Label>
+      <Input
+        type="number"
+        value={fieldConfig.validation.minLength}
+        onChange={(e) => setFieldConfig(prev => ({
+          ...prev,
+          validation: { ...prev.validation, minLength: e.target.value }
+        }))}
+        placeholder="Minimum characters"
+      />
+    </div>
+    
+    <div className="space-y-2">
+      <Label>Maximum Length</Label>
+      <Input
+        type="number"
+        value={fieldConfig.validation.maxLength}
+        onChange={(e) => setFieldConfig(prev => ({
+          ...prev,
+          validation: { ...prev.validation, maxLength: e.target.value }
+        }))}
+        placeholder="Maximum characters"
+      />
+    </div>
+  </>
+)}
+
+{/* Add validation warning for options */}
+{(fieldConfig.type === 'select' || fieldConfig.type === 'radio') && (
+  fieldConfig.options.length < 2 && (
+    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+      <p className="text-yellow-800 text-sm">⚠️ At least 2 options required</p>
+    </div>
+  )
+)}
 
               <div className="flex items-center space-x-2">
                 <Switch
