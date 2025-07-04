@@ -163,7 +163,7 @@ const FormBuilderView = ({
                 <Label>Minimum Length</Label>
                 <Input
                   type="number"
-                  value={fieldConfig.validation.minLength}
+                  value={fieldConfig.validation?.minLength}
                   onChange={(e) => setFieldConfig(prev => ({
                     ...prev,
                     validation: { ...prev.validation, minLength: e.target.value }
@@ -175,7 +175,7 @@ const FormBuilderView = ({
                 <Label>Maximum Length</Label>
                 <Input
                   type="number"
-                  value={fieldConfig.validation.maxLength}
+                  value={fieldConfig.validation?.maxLength}
                   onChange={(e) => setFieldConfig(prev => ({
                     ...prev,
                     validation: { ...prev.validation, maxLength: e.target.value }

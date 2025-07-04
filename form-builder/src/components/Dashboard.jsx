@@ -6,7 +6,7 @@ const Dashboard = ({ forms, handleCreateForm, handleEditForm, handleViewForm, ha
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareForm, setShareForm] = useState(null);
   const [copied, setCopied] = useState(false);
-
+  console.log('Dashboard component rendered with forms:', forms);
   const handleShareClick = (form) => {
     setShareForm(form);
     setShareModalOpen(true);

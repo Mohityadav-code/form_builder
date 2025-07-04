@@ -23,9 +23,29 @@ let forms = [
   }
 ];
 
+let submissions = [];
+
+function addSubmission(formId, data) {
+  submissions.push({ formId, data, submittedAt: new Date().toISOString() });
+}
+
+function getSubmissions(formId) {
+  return submissions.filter(s => String(s.formId) === String(formId));
+}
+
+function getSubmissionCount(formId) {
+  return getSubmissions(formId).length;
+}
+
 function getForms() {
-  // Return only form metadata (not full config)
-  return forms.map(({ id, name, description, createdAt }) => ({ id, name, description, createdAt }));
+  // Return only form metadata (not full config), plus filledCount
+  return forms.map(({ id, name, description, createdAt }) => ({
+    id,
+    name,
+    description,
+    createdAt,
+    filledCount: getSubmissionCount(id)
+  }));
 }
 
 function getFormById(id) {
@@ -59,5 +79,8 @@ module.exports = {
   getFormById,
   addForm,
   updateFormById,
-  deleteFormById
+  deleteFormById,
+  addSubmission,
+  getSubmissions,
+  getSubmissionCount
 };

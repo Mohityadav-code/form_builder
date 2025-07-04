@@ -6,6 +6,7 @@ const App = () => {
       <Router>
         <Routes>
           <Route path="/" element={<FormBuilder />} />
+          <Route path="/add" element={<FormBuilder />} />
           <Route path="/form/:id" element={<FormBuilder />} />
           <Route path="/form/:id/edit" element={<FormBuilder />} />
           <Route path="/form/:id/view" element={<FormBuilder />} />

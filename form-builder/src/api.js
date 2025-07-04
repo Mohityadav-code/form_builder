@@ -38,4 +38,20 @@ export async function deleteForm(id) {
   });
   if (!res.ok) throw new Error('Failed to delete form');
   return res.json();
+}
+
+export async function submitForm(formId, data) {
+  const res = await fetch(`${API_URL}/forms/${formId}/submit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Failed to submit form');
+  return res.json();
+}
+
+export async function getFormSubmissions(formId) {
+  const res = await fetch(`${API_URL}/forms/${formId}/submissions`);
+  if (!res.ok) throw new Error('Failed to fetch submissions');
+  return res.json();
 } 
