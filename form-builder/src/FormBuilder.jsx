@@ -305,157 +305,396 @@ const FormBuilder = () => {
   };
   // Render logic based on route
   if (location.pathname === '/' || location.pathname === '/dashboard') {
-    return <Dashboard forms={forms} handleCreateForm={handleCreateForm}  handleViewForm={handleViewForm} handleDeleteForm={handleDeleteForm} handleEditForm={handleEditForm} />;
-  }
-  if (location.pathname === '/add') {
-    return <AddForm currentForm={currentForm} setCurrentForm={setCurrentForm} templates={forms} setCurrentView={() => navigate('/')} handleNextToBuilder={handleNextToBuilder} />;
-  }
-  if (id && location.pathname.endsWith('/edit') && currentForm) {
     return (
-      <FormBuilderView
-        fieldTypes={fieldTypes}
-        currentForm={currentForm}
-        setCurrentView={() => navigate('/')}
-        handleAddField={handleAddField}
-        handleDragEnd={handleDragEnd}
-        selectedField={selectedField}
-        handleFieldSelect={handleFieldSelect}
-        renderFieldPreview={renderFieldPreview}
-        fieldConfig={fieldConfig}
-        setFieldConfig={setFieldConfig}
-        handleFieldUpdate={handleFieldUpdate}
-        handleSaveForm={handleSaveForm}
-        setCurrentForm={setCurrentForm}
-        setSelectedField={setSelectedField}
-      />
-    );
-  }
-  if (id && location.pathname.endsWith('/view') && viewingForm) {
-    return (
-      <div className="h-screen flex bg-gray-50">
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="flex justify-between items-center">
-              <div className="text-center space-y-2 flex-1">
-                <h1 className="text-2xl font-bold text-gray-900">{viewingForm.name}</h1>
-                <p className="text-gray-600">{viewingForm.description}</p>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 animate-fade-in">
+        <div className="backdrop-blur-sm bg-white/30 shadow-lg border border-white/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-lg">📋</span>
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                    Form Builder
+                  </h1>
+                  <p className="text-gray-600 text-sm">Create and manage your forms</p>
+                </div>
               </div>
-              <button className="ml-4 p-2 rounded hover:bg-gray-200" onClick={handleEditFromView} title="Edit">
-                <Edit3 className="h-6 w-6 text-blue-600" />
+              <button 
+                onClick={handleCreateForm}
+                className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out"
+              >
+                <span className="relative z-10 flex items-center space-x-2">
+                  <span>✨</span>
+                  <span>Create New Form</span>
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </button>
             </div>
-            <div className="space-y-4">
-              {viewingForm.fields && viewingForm.fields.length > 0 ? (
-                viewingForm.fields.map((field, idx) => (
-                  <div key={idx} className="mb-4">
-                    <label className="block font-medium mb-1">
-                      {field.label}
-                      {field.required && <span className="text-red-500 ml-1">*</span>}
-                    </label>
-                    {/* Render field preview (read-only) */}
-                    {renderFieldPreview(field)}
-                    {field.helperText && (
-                      <p className="text-sm text-gray-600 mt-1">{field.helperText}</p>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="text-gray-500">No fields in this form.</div>
-              )}
-            </div>
-            {/* Show filled submissions */}
-            <div className="mt-8">
-              <h2 className="text-lg font-bold mb-2">Filled Submissions ({submissions.length})</h2>
-              {submissions.length === 0 ? (
-                <div className="text-gray-500">No submissions yet.</div>
-              ) : (
-                <div className="space-y-4">
-                  {submissions.map((sub, idx) => (
-                    <div key={idx} className="border rounded p-3 bg-gray-50">
-                      <div className="text-xs text-gray-500 mb-1">Submitted: {new Date(sub.submittedAt).toLocaleString()}</div>
-                      <ul className="list-disc pl-5">
-                        {Object.entries(sub.data).map(([fid, val]) => (
-                          <li key={fid}><span className="font-medium">{viewingForm.fields.find(f => String(f.id) === String(fid))?.label || fid}:</span> {val}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Dashboard 
+            forms={forms} 
+            handleCreateForm={handleCreateForm} 
+            handleViewForm={handleViewForm} 
+            handleDeleteForm={handleDeleteForm} 
+            handleEditForm={handleEditForm} 
+          />
+        </div>
+      </div>
+    );
+  }
+  
+  // Add Form Route
+  if (location.pathname === '/add') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 animate-fade-in">
+        <div className="backdrop-blur-sm bg-white/40 shadow-lg border border-white/20">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={() => navigate('/')}
+                  className="w-10 h-10 bg-white/80 hover:bg-white rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 group"
+                >
+                  <span className="text-gray-600 group-hover:text-gray-800 text-lg">←</span>
+                </button>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                    Create New Form
+                  </h1>
+                  <p className="text-gray-600 text-sm">Start building your form</p>
                 </div>
-              )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden animate-slide-up">
+            <AddForm 
+              currentForm={currentForm} 
+              setCurrentForm={setCurrentForm} 
+              templates={forms} 
+              setCurrentView={() => navigate('/')} 
+              handleNextToBuilder={handleNextToBuilder} 
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Form Edit Route
+  if (id && location.pathname.endsWith('/edit') && currentForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 animate-fade-in">
+        <div className="backdrop-blur-sm bg-white/40 shadow-lg border border-white/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={() => navigate('/')}
+                  className="w-10 h-10 bg-white/80 hover:bg-white rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 group"
+                >
+                  <span className="text-gray-600 group-hover:text-gray-800 text-lg">←</span>
+                </button>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                    Edit Form
+                  </h1>
+                  <p className="text-gray-600 text-sm">{currentForm.name || 'Untitled Form'}</p>
+                </div>
+              </div>
+              <button 
+                onClick={handleSaveForm}
+                className="group relative overflow-hidden bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out"
+              >
+                <span className="relative z-10 flex items-center space-x-2">
+                  <span>💾</span>
+                  <span>Save Form</span>
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden animate-slide-up">
+            <FormBuilderView
+              fieldTypes={fieldTypes}
+              currentForm={currentForm}
+              setCurrentView={() => navigate('/')}
+              handleAddField={handleAddField}
+              handleDragEnd={handleDragEnd}
+              selectedField={selectedField}
+              handleFieldSelect={handleFieldSelect}
+              renderFieldPreview={renderFieldPreview}
+              fieldConfig={fieldConfig}
+              setFieldConfig={setFieldConfig}
+              handleFieldUpdate={handleFieldUpdate}
+              handleSaveForm={handleSaveForm}
+              setCurrentForm={setCurrentForm}
+              setSelectedField={setSelectedField}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Form View Route
+  if (id && location.pathname.endsWith('/view') && viewingForm) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 animate-fade-in">
+        <div className="backdrop-blur-sm bg-white/40 shadow-lg border border-white/20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={() => navigate('/')}
+                  className="w-10 h-10 bg-white/80 hover:bg-white rounded-xl flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-200 group"
+                >
+                  <span className="text-gray-600 group-hover:text-gray-800 text-lg">←</span>
+                </button>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-gray-600 bg-clip-text text-transparent">
+                    {viewingForm.name}
+                  </h1>
+                  <p className="text-gray-600 text-sm">{viewingForm.description}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <button 
+                  onClick={() => navigator.clipboard.writeText(`${window.location.origin}/form/${id}/public/preview`)}
+                  className="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out"
+                >
+                  <span className="relative z-10 flex items-center space-x-2">
+                    <Share className="h-4 w-4" />
+                    <span>Share</span>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+                <button 
+                  onClick={handleEditFromView}
+                  className="group relative overflow-hidden bg-gradient-to-r from-violet-500 to-purple-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ease-out"
+                >
+                  <span className="relative z-10 flex items-center space-x-2">
+                    <Edit3 className="h-4 w-4" />
+                    <span>Edit</span>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Form Preview */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 animate-slide-up">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Form Preview</h2>
+                <div className="w-16 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+              </div>
+              <div className="space-y-6">
+                {viewingForm.fields && viewingForm.fields.length > 0 ? (
+                  viewingForm.fields.map((field, idx) => (
+                    <div 
+                      key={idx} 
+                      className="p-4 bg-gray-50/50 rounded-xl border border-gray-200/50 hover:shadow-md transition-all duration-200 animate-fade-in"
+                      style={{ animationDelay: `${idx * 0.1}s` }}
+                    >
+                      <label className="block font-medium mb-2 text-gray-800">
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                      <div className="relative">
+                        {renderFieldPreview(field)}
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none"></div>
+                      </div>
+                      {field.helperText && (
+                        <p className="text-sm text-gray-600 mt-2">{field.helperText}</p>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <div className="text-4xl mb-4">📝</div>
+                    <p>No fields in this form yet.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+  
+            {/* Submissions */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                  Submissions ({submissions.length})
+                </h2>
+                <div className="w-16 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+              </div>
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {submissions.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <div className="text-4xl mb-4">📊</div>
+                    <p>No submissions yet.</p>
+                    <p className="text-sm mt-2">Share your form to start collecting responses!</p>
+                  </div>
+                ) : (
+                  submissions.map((sub, idx) => (
+                    <div 
+                      key={idx} 
+                      className="border border-gray-200/50 rounded-xl p-4 bg-gradient-to-r from-gray-50/50 to-white/50 hover:shadow-md transition-all duration-200 animate-fade-in"
+                      style={{ animationDelay: `${idx * 0.05}s` }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-xs text-gray-500 bg-gray-100/80 px-2 py-1 rounded-full">
+                          {new Date(sub.submittedAt).toLocaleString()}
+                        </div>
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      </div>
+                      <div className="space-y-2">
+                        {Object.entries(sub.data).map(([fid, val]) => (
+                          <div key={fid} className="flex items-start space-x-3">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                            <div className="flex-1">
+                              <span className="font-medium text-gray-800">
+                                {viewingForm.fields.find(f => String(f.id) === String(fid))?.label || fid}:
+                              </span>
+                              <span className="text-gray-700 ml-2">{val}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
     );
   }
+  
+  // Public Preview Route
   if (id && location.pathname.endsWith('/public/preview') && viewingForm) {
     if (submitSuccess) {
       return (
-        <div className="max-w-2xl mx-auto p-6 text-center">
-          <h2 className="text-2xl font-bold text-green-600 mb-4">Thank you!</h2>
-          <p>Your form has been submitted successfully.</p>
+        <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center animate-fade-in">
+          <div className="max-w-md mx-auto p-8 text-center">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 animate-bounce-in">
+              <div className="text-6xl mb-4 animate-pulse">✅</div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
+                Thank you!
+              </h2>
+              <p className="text-gray-700 text-lg">Your form has been submitted successfully.</p>
+              <div className="mt-6 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"></div>
+            </div>
+          </div>
         </div>
       );
     }
+  
     return (
-      <div className="h-screen flex bg-gray-50">
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold text-gray-900">{viewingForm.name}</h1>
-              <p className="text-gray-600">{viewingForm.description}</p>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 animate-fade-in">
+        <div className="backdrop-blur-sm bg-white/40 shadow-lg border border-white/20">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div className="text-center">
+              <div className="inline-flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-xl">📋</span>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+                    {viewingForm.name}
+                  </h1>
+                  <p className="text-gray-600 text-lg">{viewingForm.description}</p>
+                </div>
+              </div>
+              <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto"></div>
             </div>
-            <form onSubmit={handleUserFormSubmit} className="space-y-6">
-              {viewingForm.fields.map(field => (
-                <div key={field.id} className="space-y-2">
-                  <label className="block font-medium">
+          </div>
+        </div>
+        
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 animate-slide-up">
+            <form onSubmit={handleUserFormSubmit} className="space-y-8">
+              {viewingForm.fields.map((field, idx) => (
+                <div 
+                  key={field.id} 
+                  className="space-y-3 p-6 bg-gradient-to-r from-gray-50/50 to-white/50 rounded-xl border border-gray-200/50 hover:shadow-md transition-all duration-200 animate-fade-in"
+                  style={{ animationDelay: `${idx * 0.1}s` }}
+                >
+                  <label className="block font-semibold text-gray-800 text-lg">
                     {field.label}
                     {field.required && <span className="text-red-500 ml-1">*</span>}
                   </label>
+                  
                   {field.type === 'text' && (
                     <input
-                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      className={`w-full border-2 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm transition-all duration-200 focus:scale-105 focus:shadow-lg ${
+                        userFormErrors[field.id] ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
                       value={userFormData[field.id] || ''}
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       placeholder={field.placeholder}
                       required={field.required}
                     />
                   )}
+                  
                   {field.type === 'textarea' && (
                     <textarea
-                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      className={`w-full border-2 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm transition-all duration-200 focus:scale-105 focus:shadow-lg resize-none ${
+                        userFormErrors[field.id] ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
+                      rows={4}
                       value={userFormData[field.id] || ''}
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       placeholder={field.placeholder}
                       required={field.required}
                     />
                   )}
+                  
                   {field.type === 'select' && (
                     <select
-                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      className={`w-full border-2 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm transition-all duration-200 focus:scale-105 focus:shadow-lg ${
+                        userFormErrors[field.id] ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
                       value={userFormData[field.id] || ''}
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       required={field.required}
                     >
-                      <option value="">Select...</option>
+                      <option value="">Select an option...</option>
                       {field.options && field.options.map((option, idx) => (
                         <option key={idx} value={option}>{option}</option>
                       ))}
                     </select>
                   )}
+                  
                   {field.type === 'checkbox' && (
-                    <input
-                      type="checkbox"
-                      className={`rounded border-gray-300 text-blue-600 focus:ring-blue-500 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
-                      checked={!!userFormData[field.id]}
-                      onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.checked }))}
-                      required={field.required}
-                    />
+                    <label className="flex items-center space-x-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 rounded border-2 border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 group-hover:border-blue-400 transition-all duration-200"
+                        checked={!!userFormData[field.id]}
+                        onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.checked }))}
+                        required={field.required}
+                      />
+                      <span className="text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
+                        {field.label}
+                      </span>
+                    </label>
                   )}
+                  
                   {field.type === 'radio' && field.options && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {field.options.map((option, idx) => (
-                        <label key={idx} className="flex items-center gap-2">
+                        <label key={idx} className="flex items-center space-x-3 cursor-pointer group">
                           <input
                             type="radio"
                             name={`radio-${field.id}`}
@@ -463,50 +702,78 @@ const FormBuilder = () => {
                             checked={userFormData[field.id] === option}
                             onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: option }))}
                             required={field.required}
+                            className="w-5 h-5 text-blue-600 focus:ring-blue-500 focus:ring-2 group-hover:ring-blue-300 transition-all duration-200"
                           />
-                          {option}
+                          <span className="text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
+                            {option}
+                          </span>
                         </label>
                       ))}
                     </div>
                   )}
+                  
                   {field.type === 'email' && (
                     <input
                       type="email"
-                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      className={`w-full border-2 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm transition-all duration-200 focus:scale-105 focus:shadow-lg ${
+                        userFormErrors[field.id] ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
                       value={userFormData[field.id] || ''}
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       placeholder={field.placeholder}
                       required={field.required}
                     />
                   )}
+                  
                   {field.type === 'number' && (
                     <input
                       type="number"
-                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      className={`w-full border-2 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm transition-all duration-200 focus:scale-105 focus:shadow-lg ${
+                        userFormErrors[field.id] ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
                       value={userFormData[field.id] || ''}
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       placeholder={field.placeholder}
                       required={field.required}
                     />
                   )}
+                  
                   {field.type === 'date' && (
                     <input
                       type="date"
-                      className={`w-full border rounded px-2 py-1 ${userFormErrors[field.id] ? 'border-red-500' : ''}`}
+                      className={`w-full border-2 rounded-xl px-4 py-3 bg-white/80 backdrop-blur-sm transition-all duration-200 focus:scale-105 focus:shadow-lg ${
+                        userFormErrors[field.id] ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-blue-500'
+                      }`}
                       value={userFormData[field.id] || ''}
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       required={field.required}
                     />
                   )}
+                  
                   {userFormErrors[field.id] && (
-                    <p className="text-red-500 text-sm">{userFormErrors[field.id]}</p>
+                    <p className="text-red-500 text-sm font-medium animate-shake">
+                      {userFormErrors[field.id]}
+                    </p>
                   )}
+                  
                   {field.helperText && (
                     <p className="text-gray-600 text-sm">{field.helperText}</p>
                   )}
                 </div>
               ))}
-              <Button type="submit" className="w-full">Submit</Button>
+              
+              <div className="flex justify-center pt-6">
+                <button
+                  type="submit"
+                  className="group relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 text-white px-12 py-4 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ease-out"
+                >
+                  <span className="relative z-10 flex items-center space-x-3">
+                    <span>🚀</span>
+                    <span>Submit Form</span>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </button>
+              </div>
             </form>
           </div>
         </div>
