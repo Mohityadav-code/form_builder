@@ -185,6 +185,34 @@ const FormBuilderView = ({
               </div>
             </>
           )}
+          {fieldConfig.type === 'number' && (
+            <>
+              <div className="space-y-2">
+                <Label>Minimum Value</Label>
+                <Input
+                  type="number"
+                  value={fieldConfig.validation?.min || ''}
+                  onChange={(e) => setFieldConfig(prev => ({
+                    ...prev,
+                    validation: { ...prev.validation, min: e.target.value }
+                  }))}
+                  placeholder="Minimum value"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Maximum Value</Label>
+                <Input
+                  type="number"
+                  value={fieldConfig.validation?.max || ''}
+                  onChange={(e) => setFieldConfig(prev => ({
+                    ...prev,
+                    validation: { ...prev.validation, max: e.target.value }
+                  }))}
+                  placeholder="Maximum value"
+                />
+              </div>
+            </>
+          )}
           {(fieldConfig.type === 'select' || fieldConfig.type === 'radio') && (
             fieldConfig.options.length < 2 && (
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">

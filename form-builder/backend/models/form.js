@@ -6,7 +6,15 @@ const fieldSchema = new mongoose.Schema({
   label: String,
   placeholder: String,
   required: Boolean,
-  options: [String]
+  options: [String],
+  helperText: String,
+  validation: {
+    min: String,
+    max: String,
+    minLength: String,
+    maxLength: String,
+    pattern: String
+  }
 });
 
 const formSchema = new mongoose.Schema({

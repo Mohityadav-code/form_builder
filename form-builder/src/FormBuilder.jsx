@@ -148,23 +148,53 @@ const FormBuilder = () => {
       helperText: '',
       required: false,
       options: type === 'select' || type === 'radio' ? ['Option 1', 'Option 2'] : [],
-      validation: { minLength: '', maxLength: '', pattern: '' }
+      validation: type === 'number' 
+        ? { min: '', max: '' } 
+        : { minLength: '', maxLength: '', pattern: '' }
     };
     setCurrentForm(prev => ({ ...prev, fields: [...prev.fields, newField] }));
   };
 
   const handleFieldSelect = (field) => {
-    setSelectedField(field);
-    setFieldConfig({ ...field });
+    // Ensure the field has a validation object
+    const fieldWithValidation = {
+      ...field,
+      validation: field.validation || (
+        field.type === 'number' 
+          ? { min: '', max: '' } 
+          : { minLength: '', maxLength: '', pattern: '' }
+      )
+    };
+    
+    setSelectedField(fieldWithValidation);
+    setFieldConfig(fieldWithValidation);
   };
 
   const handleFieldUpdate = () => {
+    // Ensure fieldConfig has a validation object
+    const updatedFieldConfig = {
+      ...fieldConfig,
+      validation: fieldConfig.validation || (
+        fieldConfig.type === 'number' 
+          ? { min: '', max: '' } 
+          : { minLength: '', maxLength: '', pattern: '' }
+      )
+    };
+    
     setCurrentForm(prev => ({
       ...prev,
-      fields: prev.fields.map(f => f.id === selectedField.id ? { ...fieldConfig } : f)
+      fields: prev.fields.map(f => f.id === selectedField.id ? updatedFieldConfig : f)
     }));
     setSelectedField(null);
-    setFieldConfig({ type: 'text', label: '', placeholder: '', helperText: '', required: false, options: [] });
+    setFieldConfig({ 
+      type: 'text', 
+      label: '', 
+      placeholder: '', 
+      helperText: '', 
+      required: false, 
+      options: [],
+      validation: { minLength: '', maxLength: '', pattern: '' }
+    });
   };
 
   const handleSaveForm = async () => {
@@ -261,15 +291,24 @@ const FormBuilder = () => {
 
   const validateField = (field) => {
     const errors = [];
+    // Ensure field has a validation object
+    const validation = field.validation || {};
+    
     if (['text', 'email', 'textarea'].includes(field.type)) {
-      if (field.validation.minLength && field.validation.minLength < 1) {
+      if (validation.minLength && validation.minLength < 1) {
         errors.push('Minimum length must be at least 1');
       }
-      if (field.validation.maxLength && field.validation.maxLength < 1) {
+      if (validation.maxLength && validation.maxLength < 1) {
         errors.push('Maximum length must be at least 1');
       }
-      if (field.validation.minLength && field.validation.maxLength && parseInt(field.validation.minLength) > parseInt(field.validation.maxLength)) {
+      if (validation.minLength && validation.maxLength && parseInt(validation.minLength) > parseInt(validation.maxLength)) {
         errors.push('Minimum length cannot be greater than maximum length');
+      }
+    }
+    if (field.type === 'number') {
+      if (validation.min && validation.max && 
+          Number(validation.min) > Number(validation.max)) {
+        errors.push('Minimum value cannot be greater than maximum value');
       }
     }
     if (['select', 'radio'].includes(field.type)) {
@@ -303,8 +342,48 @@ const FormBuilder = () => {
     const errors = {};
     if (viewingForm && viewingForm.fields) {
       viewingForm.fields.forEach(field => {
+        // Ensure field has a validation object
+        const validation = field.validation || {};
+        
+        // Check if required field is empty
         if (field.required && (!userFormData[field.id] || userFormData[field.id].toString().trim() === '')) {
           errors[field.id] = 'This field is required';
+        } 
+        // Additional validation for filled fields
+        else if (userFormData[field.id]) {
+          // Email validation
+          if (field.type === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(userFormData[field.id])) {
+              errors[field.id] = 'Please enter a valid email address';
+            }
+          }
+          
+          // Number validation (min/max)
+          if (field.type === 'number') {
+            const numValue = Number(userFormData[field.id]);
+            
+            if (validation.min && numValue < Number(validation.min)) {
+              errors[field.id] = `Value must be at least ${validation.min}`;
+            }
+            
+            if (validation.max && numValue > Number(validation.max)) {
+              errors[field.id] = `Value must not exceed ${validation.max}`;
+            }
+          }
+          
+          // Text/textarea length validation
+          if (['text', 'textarea'].includes(field.type)) {
+            const textValue = userFormData[field.id].toString();
+            
+            if (validation.minLength && textValue.length < Number(validation.minLength)) {
+              errors[field.id] = `Must be at least ${validation.minLength} characters`;
+            }
+            
+            if (validation.maxLength && textValue.length > Number(validation.maxLength)) {
+              errors[field.id] = `Must not exceed ${validation.maxLength} characters`;
+            }
+          }
         }
       });
     }
@@ -508,6 +587,8 @@ const FormBuilder = () => {
                       onChange={e => setUserFormData(prev => ({ ...prev, [field.id]: e.target.value }))}
                       placeholder={field.placeholder}
                       required={field.required}
+                      min={(field.validation && field.validation.min) || ''}
+                      max={(field.validation && field.validation.max) || ''}
                     />
                   )}
                   {field.type === 'date' && (
