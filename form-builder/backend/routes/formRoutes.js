@@ -4,56 +4,93 @@ const { getForms, getFormById, addForm, updateFormById, deleteFormById, addSubmi
 const Form = require('../models/form');
 
 // Get all forms (metadata only)
-router.get('/forms', (req, res) => {
-  res.json(getForms());
+router.get('/forms', async (req, res) => {
+  try {
+    const forms = await getForms();
+    res.json(forms);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch forms' });
+  }
 });
 
 // Get form details by id
-router.get('/forms/:id', (req, res) => {
-  const form = getFormById(req.params.id);
-  if (!form) return res.status(404).json({ error: 'Form not found' });
-  res.json(form);
+router.get('/forms/:id', async (req, res) => {
+  try {
+    const form = await getFormById(req.params.id);
+    if (!form) return res.status(404).json({ error: 'Form not found' });
+    res.json(form);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch form' });
+  }
 });
 
 // Add a new form
-router.post('/forms', (req, res) => {
-  const form = new Form({
-    ...req.body,
-    id: Date.now(),
-    createdAt: new Date().toISOString().split('T')[0]
-  });
-  addForm(form);
-  res.status(201).json(form);
+router.post('/forms', async (req, res) => {
+  try {
+    // Validate required fields
+    const { name, description, fields } = req.body;
+    if (!name || !description) {
+      return res.status(400).json({ error: 'Name and description are required' });
+    }
+    
+    // Create the form
+    const form = await addForm(req.body);
+    if (!form) return res.status(400).json({ error: 'Failed to create form' });
+    res.status(201).json(form);
+  } catch (err) {
+    console.error('Error creating form:', err);
+    res.status(500).json({ error: 'Failed to create form' });
+  }
 });
 
 // Update a form by id
-router.put('/forms/:id', (req, res) => {
-  const updated = updateFormById(req.params.id, req.body);
-  if (!updated) return res.status(404).json({ error: 'Form not found' });
-  res.json(updated);
+router.put('/forms/:id', async (req, res) => {
+  try {
+    const updated = await updateFormById(req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: 'Form not found' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update form' });
+  }
 });
 
 // Delete a form by id
-router.delete('/forms/:id', (req, res) => {
-  const idx = require('../database').deleteFormById(req.params.id);
-  if (!idx) return res.status(404).json({ error: 'Form not found' });
-  res.json({ success: true });
+router.delete('/forms/:id', async (req, res) => {
+  try {
+    const success = await deleteFormById(req.params.id);
+    if (!success) return res.status(404).json({ error: 'Form not found' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete form' });
+  }
 });
 
 // Submit a filled form
-router.post('/forms/:id/submit', (req, res) => {
-  const form = getFormById(req.params.id);
-  if (!form) return res.status(404).json({ error: 'Form not found' });
-  addSubmission(req.params.id, req.body);
-  res.status(201).json({ success: true });
+router.post('/forms/:id/submit', async (req, res) => {
+  try {
+    const form = await getFormById(req.params.id);
+    if (!form) return res.status(404).json({ error: 'Form not found' });
+    
+    const submission = await addSubmission(req.params.id, req.body);
+    if (!submission) return res.status(400).json({ error: 'Failed to submit form' });
+    
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to submit form' });
+  }
 });
 
 // Get all submissions for a form
-router.get('/forms/:id/submissions', (req, res) => {
-  const form = getFormById(req.params.id);
-  if (!form) return res.status(404).json({ error: 'Form not found' });
-  const submissions = getSubmissions(req.params.id);
-  res.json(submissions);
+router.get('/forms/:id/submissions', async (req, res) => {
+  try {
+    const form = await getFormById(req.params.id);
+    if (!form) return res.status(404).json({ error: 'Form not found' });
+    
+    const submissions = await getSubmissions(req.params.id);
+    res.json(submissions);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
 });
 
 module.exports = router;

@@ -1,14 +1,28 @@
-// Placeholder for future Mongoose model
-// In the future, replace with Mongoose schema and model
+const mongoose = require('mongoose');
 
-class Form {
-  constructor({ id, name, description, fields, createdAt }) {
-    this.id = id;
-    this.name = name;
-    this.description = description;
-    this.fields = fields;
-    this.createdAt = createdAt;
+const fieldSchema = new mongoose.Schema({
+  id: String,
+  type: String,
+  label: String,
+  placeholder: String,
+  required: Boolean,
+  options: [String]
+});
+
+const formSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  fields: [fieldSchema],
+  createdAt: {
+    type: String,
+    default: () => new Date().toISOString().split('T')[0]
   }
-}
+});
 
-module.exports = Form;
+module.exports = mongoose.model('Form', formSchema);

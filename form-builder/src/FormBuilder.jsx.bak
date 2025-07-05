@@ -112,7 +112,7 @@ const FormBuilder = () => {
   // Handlers
   const handleCreateForm = () => navigate('/add');
   const handleViewForm = (id) => navigate(`/form/${id}/view`);
-  const handleEditForm = (id) => navigate(`/form/${id}/edit`);
+
 
   const handleNextToBuilder = async () => {
     let draftForm = { ...currentForm };
@@ -313,16 +313,16 @@ const FormBuilder = () => {
       alert('Failed to submit form');
     }
   };
-
+  const handleEditForm = (id) => {
+    navigate(`/form/${id}/edit`);
+  };
   // Render logic based on route
   if (location.pathname === '/' || location.pathname === '/dashboard') {
-    return <Dashboard forms={forms} handleCreateForm={handleCreateForm} handleViewForm={handleViewForm} handleDeleteForm={handleDeleteForm} handleEditForm={handleEditForm} />;
+    return <Dashboard forms={forms} handleCreateForm={handleCreateForm}  handleViewForm={handleViewForm} handleDeleteForm={handleDeleteForm} handleEditForm={handleEditForm} />;
   }
-  
   if (location.pathname === '/add') {
     return <AddForm currentForm={currentForm} setCurrentForm={setCurrentForm} templates={forms} setCurrentView={() => navigate('/')} handleNextToBuilder={handleNextToBuilder} />;
   }
-  
   if ((id && location.pathname.endsWith('/edit')) || location.pathname === '/form/new/edit') {
     return (
       <FormBuilderView
@@ -343,7 +343,6 @@ const FormBuilder = () => {
       />
     );
   }
-  
   if (id && location.pathname.endsWith('/view') && viewingForm) {
     return (
       <div className="h-screen flex bg-gray-50">
@@ -402,7 +401,6 @@ const FormBuilder = () => {
       </div>
     );
   }
-  
   if (id && location.pathname.endsWith('/public/preview') && viewingForm) {
     if (submitSuccess) {
       return (
@@ -528,7 +526,6 @@ const FormBuilder = () => {
       </div>
     );
   }
-  
   return null;
 };
 
