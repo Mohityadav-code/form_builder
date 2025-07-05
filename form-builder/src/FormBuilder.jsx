@@ -5,7 +5,7 @@ import AddForm from './components/AddForm';
 import FormBuilderView from './components/FormBuilderView';
 import { Share, Edit3 } from 'lucide-react';
 import { Button } from './ui';
-import { getForms, getFormById, createForm, updateForm, deleteForm, submitForm, getFormSubmissions } from './api';
+import { getForms, getFormById, getPublicFormById, createForm, updateForm, deleteForm, submitForm, getFormSubmissions } from './api';
 
 const FormBuilder = () => {
   const { id } = useParams();
@@ -92,8 +92,8 @@ const FormBuilder = () => {
           setEditingFormId(null);
         }).catch(() => navigate('/'));
       } else if (location.pathname.endsWith('/public/preview')) {
-        // Public preview mode
-        getFormById(id).then(form => {
+        // Public preview mode - use the public endpoint
+        getPublicFormById(id).then(form => {
           setViewingForm(form);
           setEditingFormId(null);
         }).catch(() => navigate('/'));

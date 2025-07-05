@@ -3,7 +3,7 @@ const router = express.Router();
 const { getForms, getFormById, addForm, updateFormById, deleteFormById, addSubmission, getSubmissions } = require('../database');
 const Form = require('../models/form');
 
-// Get all forms (metadata only)
+// Get all forms (metadata only) - PROTECTED, should not be accessible publicly
 router.get('/forms', async (req, res) => {
   try {
     const forms = await getForms();
@@ -13,8 +13,20 @@ router.get('/forms', async (req, res) => {
   }
 });
 
-// Get form details by id
+// Get form details by id - PROTECTED, should not be accessible publicly
 router.get('/forms/:id', async (req, res) => {
+  try {
+    const form = await getFormById(req.params.id);
+    if (!form) return res.status(404).json({ error: 'Form not found' });
+    res.json(form);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch form' });
+  }
+});
+
+// PUBLIC endpoint - Get form by ID for public access
+// This endpoint is specifically for public form viewing/submission
+router.get('/public/forms/:id', async (req, res) => {
   try {
     const form = await getFormById(req.params.id);
     if (!form) return res.status(404).json({ error: 'Form not found' });
@@ -65,8 +77,23 @@ router.delete('/forms/:id', async (req, res) => {
   }
 });
 
-// Submit a filled form
+// Submit a filled form - PROTECTED route
 router.post('/forms/:id/submit', async (req, res) => {
+  try {
+    const form = await getFormById(req.params.id);
+    if (!form) return res.status(404).json({ error: 'Form not found' });
+    
+    const submission = await addSubmission(req.params.id, req.body);
+    if (!submission) return res.status(400).json({ error: 'Failed to submit form' });
+    
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to submit form' });
+  }
+});
+
+// PUBLIC endpoint - Submit a filled form
+router.post('/public/forms/:id/submit', async (req, res) => {
   try {
     const form = await getFormById(req.params.id);
     if (!form) return res.status(404).json({ error: 'Form not found' });

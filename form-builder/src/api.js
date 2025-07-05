@@ -12,6 +12,13 @@ export async function getFormById(id) {
   return res.json();
 }
 
+// Public endpoint for accessing forms without exposing all forms
+export async function getPublicFormById(id) {
+  const res = await fetch(`${API_URL}/public/forms/${id}`);
+  if (!res.ok) throw new Error('Form not found');
+  return res.json();
+}
+
 export async function createForm(form) {
   const res = await fetch(`${API_URL}/forms`, {
     method: 'POST',
@@ -41,7 +48,8 @@ export async function deleteForm(id) {
 }
 
 export async function submitForm(formId, data) {
-  const res = await fetch(`${API_URL}/forms/${formId}/submit`, {
+  // Use the public endpoint for form submissions
+  const res = await fetch(`${API_URL}/public/forms/${formId}/submit`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
