@@ -23,8 +23,7 @@ const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handl
             setCurrentForm(prev => ({
               ...prev,
               fields: details.fields || [],
-              // Only update description if user hasn't entered one yet
-              description: prev.description || details.description || '',
+              // Don't update description - keep user's entered description
             }));
           } catch {
             console.error('Failed to preload template:', selected.id);

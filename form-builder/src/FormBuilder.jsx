@@ -121,6 +121,7 @@ const FormBuilder = () => {
       if (templateForm) {
         try {
           const details = await getFormById(templateForm.id);
+          // Only copy the fields from the template, don't touch the description
           draftForm.fields = [...details.fields];
         } catch (error) {
           console.error('Failed to load template details:', error);
