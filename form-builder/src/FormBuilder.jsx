@@ -12,7 +12,7 @@ const FormBuilder = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [forms, setForms] = useState([]);
-  const [currentForm, setCurrentForm] = useState({ name: '', description: '', template: '', fields: [] });
+  const [currentForm, setCurrentForm] = useState({ name: '', description: '', template: 'blank', fields: [] });
   const [selectedField, setSelectedField] = useState(null);
   const [fieldConfig, setFieldConfig] = useState({
     type: 'text', label: '', placeholder: '', helperText: '', required: false, options: [], validation: { minLength: '', maxLength: '', pattern: '' }
@@ -55,11 +55,11 @@ const FormBuilder = () => {
     if (location.pathname === '/' || location.pathname === '/dashboard') {
       setViewingForm(null);
       setEditingFormId(null);
-      setCurrentForm({ name: '', description: '', template: '', fields: [] });
+      setCurrentForm({ name: '', description: '', template: 'blank', fields: [] });
       return;
     }
     if (location.pathname === '/add') {
-      setCurrentForm({ name: '', description: '', template: '', fields: [] });
+      setCurrentForm({ name: '', description: '', template: 'blank', fields: [] });
       setEditingFormId(null);
       setViewingForm(null);
       return;
@@ -117,13 +117,18 @@ const FormBuilder = () => {
   const handleNextToBuilder = async () => {
     let draftForm = { ...currentForm };
     if (currentForm.template && currentForm.template !== 'blank') {
-      const templateMeta = forms.find(f => f.name.toLowerCase().includes(currentForm.template));
-      if (templateMeta) {
+      const templateForm = forms.find(f => String(f.id) === String(currentForm.template));
+      if (templateForm) {
         try {
-          const templateForm = await getFormById(templateMeta.id);
-          draftForm.fields = [...templateForm.fields];
-        } catch {}
+          const details = await getFormById(templateForm.id);
+          draftForm.fields = [...details.fields];
+        } catch (error) {
+          console.error('Failed to load template details:', error);
+        }
       }
+    } else if (currentForm.template === 'blank') {
+      // Ensure blank template has empty fields array
+      draftForm.fields = [];
     }
     
     // Instead of creating a form in the backend immediately, just navigate to the form builder

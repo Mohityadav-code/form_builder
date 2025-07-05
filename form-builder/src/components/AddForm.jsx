@@ -6,9 +6,9 @@ import { getFormById } from '../api';
 const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handleNextToBuilder }) => {
   // Find the selected template's name for display
   let selectedTemplateLabel = 'Select...';
-  if (currentForm.template === 'blank' || !currentForm.template) {
+  if (currentForm.template === 'blank') {
     selectedTemplateLabel = 'Blank Form';
-  } else {
+  } else if (currentForm.template) {
     const selected = templates.find(t => String(t.id) === String(currentForm.template));
     if (selected) selectedTemplateLabel = selected.name;
   }
@@ -22,21 +22,30 @@ const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handl
             const details = await getFormById(selected.id);
             setCurrentForm(prev => ({
               ...prev,
-              description: details.description || '',
               fields: details.fields || [],
+              // Only update description if user hasn't entered one yet
+              description: prev.description || details.description || '',
             }));
           } catch {
             console.error('Failed to preload template:', selected.id);
-            setCurrentForm(prev => ({ ...prev, description: '', fields: [] }));
+            setCurrentForm(prev => ({ ...prev, fields: [] }));
           }
         }
       } else if (currentForm.template === 'blank') {
-        setCurrentForm(prev => ({ ...prev, description: '', fields: [] }));
+        // For blank template, just clear fields but keep description
+        setCurrentForm(prev => ({ ...prev, fields: [] }));
       }
     }
     preloadTemplate();
     // eslint-disable-next-line
   }, [currentForm.template]);
+
+  // Set blank as default template if none is selected
+  useEffect(() => {
+    if (!currentForm.template) {
+      setCurrentForm(prev => ({ ...prev, template: 'blank' }));
+    }
+  }, []);
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -54,12 +63,15 @@ const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handl
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="form-name">Form Name</Label>
+            <Label htmlFor="form-name">
+              Form Name <span className="text-red-500">*</span>
+            </Label>
             <Input
               id="form-name"
               placeholder="Enter form name"
               value={currentForm.name}
               onChange={(e) => setCurrentForm(prev => ({ ...prev, name: e.target.value }))}
+              required
             />
           </div>
           <div className="space-y-2">
@@ -72,7 +84,7 @@ const AddForm = ({ currentForm, setCurrentForm, templates, setCurrentView, handl
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="template">Template Selection</Label>
+            <Label htmlFor="template">Template Selection <span className="text-red-500">*</span></Label>
             <Select value={selectedTemplateLabel || ''} onValueChange={(value) => setCurrentForm(prev => ({ ...prev, template: value }))}>
               <SelectItem key="blank" value="blank">
                 <div>

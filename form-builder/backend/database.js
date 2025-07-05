@@ -100,8 +100,8 @@ async function getFormById(id) {
 async function addForm(form) {
   try {
     // Validate required fields
-    if (!form.name || !form.description) {
-      console.error('Form validation failed: missing name or description');
+    if (!form.name) {
+      console.error('Form validation failed: missing name');
       return null;
     }
     

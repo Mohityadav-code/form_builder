@@ -28,9 +28,9 @@ router.get('/forms/:id', async (req, res) => {
 router.post('/forms', async (req, res) => {
   try {
     // Validate required fields
-    const { name, description, fields } = req.body;
-    if (!name || !description) {
-      return res.status(400).json({ error: 'Name and description are required' });
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
     }
     
     // Create the form
