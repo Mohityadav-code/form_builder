@@ -13,6 +13,7 @@ const App = () => {
           <Route path="/form/:id/share" element={<FormBuilder />} />
           <Route path="/form/:id/delete" element={<FormBuilder />} />
           <Route path="/form/:id/public/preview" element={<FormBuilder />} />
+          
         </Routes>
       </Router>
     </div>
