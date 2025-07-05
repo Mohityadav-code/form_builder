@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, GripVertical, Plus, Settings, Eye, Trash2, Copy, Move, Zap } from 'lucide-react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 // Mock UI components for demo
 const Button = ({ children, variant = 'default', size = 'default', className = '', onClick, disabled, ...props }) => {
@@ -162,6 +163,45 @@ const FormBuilderView = () => {
     }));
   };
 
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const items = Array.from(currentForm.fields);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setCurrentForm(prev => ({
+      ...prev,
+      fields: items
+    }));
+  };
+
+  const handleDuplicateField = (fieldId) => {
+    const fieldToDuplicate = currentForm.fields.find(f => f.id === fieldId);
+    if (!fieldToDuplicate) return;
+
+    const duplicatedField = {
+      ...fieldToDuplicate,
+      id: Date.now(),
+      label: `${fieldToDuplicate.label} (Copy)`
+    };
+
+    setCurrentForm(prev => ({
+      ...prev,
+      fields: [...prev.fields, duplicatedField]
+    }));
+  };
+
+  const handleDeleteField = (fieldId) => {
+    setCurrentForm(prev => ({
+      ...prev,
+      fields: prev.fields.filter(f => f.id !== fieldId)
+    }));
+    if (selectedField?.id === fieldId) {
+      setSelectedField(null);
+    }
+  };
+
   const renderFieldPreview = (field) => {
     switch (field.type) {
       case 'text':
@@ -204,6 +244,111 @@ const FormBuilderView = () => {
       default:
         return <Input placeholder={field.placeholder} disabled />;
     }
+  };
+
+  const renderFormField = (field, index) => {
+    if (previewMode) {
+      // Preview mode - show actual form fields
+      return (
+        <div key={field.id} className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Label className="font-medium text-gray-900">
+              {field.label}
+              {field.required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
+          </div>
+          {renderFieldPreview(field)}
+          {field.helperText && (
+            <p className="text-sm text-gray-600 italic">{field.helperText}</p>
+          )}
+        </div>
+      );
+    }
+
+    // Edit mode - show draggable field with controls
+    return (
+      <Draggable key={field.id} draggableId={field.id.toString()} index={index}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            className={`transition-all duration-200 ${
+              snapshot.isDragging ? 'opacity-75 rotate-2' : ''
+            }`}
+          >
+            <Card
+              className={`cursor-pointer transition-all duration-200 group ${
+                selectedField?.id === field.id
+                  ? 'ring-2 ring-blue-500 shadow-lg bg-gradient-to-r from-blue-50 to-purple-50'
+                  : 'hover:shadow-md hover:border-blue-200'
+              } ${snapshot.isDragging ? 'shadow-xl' : ''}`}
+              onClick={() => handleFieldSelect(field)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div 
+                    {...provided.dragHandleProps}
+                    className={`flex flex-col items-center gap-1 transition-opacity cursor-move hover:opacity-100 ${
+                      snapshot.isDragging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    <GripVertical className={`h-4 w-4 ${
+                      snapshot.isDragging ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+                    }`} />
+                    <span className="text-xs text-gray-400">#{index + 1}</span>
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="font-medium text-gray-900 flex items-center gap-2">
+                        {field.label}
+                        {field.required && <span className="text-red-500">*</span>}
+                        <Badge variant="default" className="text-xs">
+                          {field.type}
+                        </Badge>
+                      </Label>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Tooltip content="Duplicate field">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDuplicateField(field.id);
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </Tooltip>
+                        <Tooltip content="Delete field">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteField(field.id);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </Tooltip>
+                      </div>
+                    </div>
+                    <div className="form-field-preview">
+                      {renderFieldPreview(field)}
+                    </div>
+                    {field.helperText && (
+                      <p className="text-sm text-gray-600 italic">{field.helperText}</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </Draggable>
+    );
   };
 
   return (
@@ -306,62 +451,102 @@ const FormBuilderView = () => {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {currentForm.fields.map((field, index) => (
-                  <Card
-                    key={field.id}
-                    className={`cursor-pointer transition-all duration-200 group ${
-                      selectedField?.id === field.id
-                        ? 'ring-2 ring-blue-500 shadow-lg bg-gradient-to-r from-blue-50 to-purple-50'
-                        : 'hover:shadow-md hover:border-blue-200'
-                    }`}
-                    onClick={() => handleFieldSelect(field)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex flex-col items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <GripVertical className="h-4 w-4 text-gray-400 cursor-move" />
-                          <span className="text-xs text-gray-400">#{index + 1}</span>
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <Label className="font-medium text-gray-900 flex items-center gap-2">
-                              {field.label}
-                              {field.required && <span className="text-red-500">*</span>}
-                              <Badge variant="default" className="text-xs">
-                                {field.type}
-                              </Badge>
-                            </Label>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Tooltip content="Duplicate field">
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <Copy className="h-3 w-3" />
-                                </Button>
-                              </Tooltip>
-                              <Tooltip content="Move field">
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <Move className="h-3 w-3" />
-                                </Button>
-                              </Tooltip>
-                              <Tooltip content="Delete field">
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-500 hover:text-red-700">
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </Tooltip>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="form-fields">
+                  {(provided) => (
+                    <div 
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="space-y-4"
+                    >
+                      {currentForm.fields.map((field, index) => (
+                        <Draggable key={field.id} draggableId={field.id.toString()} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`transition-all duration-200 ${
+                                snapshot.isDragging ? 'opacity-75 rotate-2' : ''
+                              }`}
+                            >
+                              <Card
+                                className={`cursor-pointer transition-all duration-200 group ${
+                                  selectedField?.id === field.id
+                                    ? 'ring-2 ring-blue-500 shadow-lg bg-gradient-to-r from-blue-50 to-purple-50'
+                                    : 'hover:shadow-md hover:border-blue-200'
+                                } ${snapshot.isDragging ? 'shadow-xl' : ''}`}
+                                onClick={() => handleFieldSelect(field)}
+                              >
+                                <CardContent className="p-4">
+                                  <div className="flex items-start gap-3">
+                                    <div 
+                                      {...provided.dragHandleProps}
+                                      className={`flex flex-col items-center gap-1 transition-opacity cursor-move hover:opacity-100 ${
+                                        snapshot.isDragging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                      }`}
+                                    >
+                                      <GripVertical className={`h-4 w-4 ${
+                                        snapshot.isDragging ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+                                      }`} />
+                                      <span className="text-xs text-gray-400">#{index + 1}</span>
+                                    </div>
+                                    <div className="flex-1 space-y-3">
+                                      <div className="flex items-center justify-between">
+                                        <Label className="font-medium text-gray-900 flex items-center gap-2">
+                                          {field.label}
+                                          {field.required && <span className="text-red-500">*</span>}
+                                          <Badge variant="default" className="text-xs">
+                                            {field.type}
+                                          </Badge>
+                                        </Label>
+                                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                          <Tooltip content="Duplicate field">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="h-8 w-8 p-0"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDuplicateField(field.id);
+                                              }}
+                                            >
+                                              <Copy className="h-3 w-3" />
+                                            </Button>
+                                          </Tooltip>
+                                          <Tooltip content="Delete field">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteField(field.id);
+                                              }}
+                                            >
+                                              <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                          </Tooltip>
+                                        </div>
+                                      </div>
+                                      <div className="form-field-preview">
+                                        {renderFieldPreview(field)}
+                                      </div>
+                                      {field.helperText && (
+                                        <p className="text-sm text-gray-600 italic">{field.helperText}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
                             </div>
-                          </div>
-                          <div className="form-field-preview">
-                            {renderFieldPreview(field)}
-                          </div>
-                          {field.helperText && (
-                            <p className="text-sm text-gray-600 italic">{field.helperText}</p>
                           )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             )}
           </div>
         </div>
